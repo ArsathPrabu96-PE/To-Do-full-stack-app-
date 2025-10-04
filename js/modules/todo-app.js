@@ -1,0 +1,785 @@
+
+/**
+ * Todo application functionality
+ * Handles todo CRUD operations and UI interactions
+ */
+const TodoApp = {
+    todoList: null,
+    todoForm: null,
+    todoInput: null,
+    // Use explicit IPv4 to avoid localhost name resolution/IPv6 issues on some Windows setups
+    API_URL: 'http://127.0.0.1:3000/todos',
+    taskDates: {}, // Object to store dates with tasks
+    
+    init() {
+        console.log('Initializing TodoApp...');
+        this.todoList = document.getElementById('todo-list');
+        
+        // Only run To-Do logic if the list container exists on the page
+        if (!this.todoList) {
+            console.log('Todo list container not found, exiting initialization');
+            return;
+        }
+        
+        console.log('Todo list container found');
+        
+        this.todoForm = document.getElementById('todo-form');
+        this.todoInput = document.getElementById('todo-input');
+        
+        if (!this.todoForm) {
+            console.log('Todo form not found');
+        }
+        if (!this.todoInput) {
+            console.log('Todo input not found');
+        }
+        
+        // Set up event listeners
+        console.log('Setting up event listeners');
+        this.setupEventListeners();
+        
+        // Initial fetch of todos for today
+        console.log('Fetching initial todos for today');
+        this.fetchTodos(new Date());
+    // Populate category filter on load (will update after fetch completes)
+    this.updateCategoryFilter();
+        
+        console.log('TodoApp initialization complete');
+    },
+    
+    setupEventListeners() {
+        // Add task form submission
+        if (this.todoForm) {
+            this.todoForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const taskText = this.todoInput.value.trim();
+                
+                if (taskText !== '') {
+                    this.addTodo(taskText);
+                }
+            });
+        }
+        
+        // Event delegation for delete, complete, and edit buttons
+        this.todoList.addEventListener('click', (event) => {
+            const target = event.target;
+            const li = target.closest('li');
+            if (!li) return;
+            
+            const id = li.dataset.id;
+            
+            if (target.classList.contains('delete-btn') || target.closest('.delete-btn')) {
+                this.deleteTodo(id);
+            } else if (target.classList.contains('complete-btn') || target.closest('.complete-btn')) {
+                const isCurrentlyCompleted = li.classList.contains('completed');
+                this.toggleComplete(id, !isCurrentlyCompleted);
+            } else if (target.classList.contains('edit-btn') || target.closest('.edit-btn')) {
+                const taskText = li.querySelector('.task-text');
+                this.handleEdit(li, taskText, { id, text: taskText.textContent });
+            }
+        });
+        
+        // Filter and sort controls
+        const priorityFilter = document.getElementById('priority-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const sortByPriority = document.getElementById('sort-by-priority');
+        const sortByDate = document.getElementById('sort-by-date');
+        const sortByCategory = document.getElementById('sort-by-category');
+        
+        console.log('Setting up filter and sort controls:', {
+            priorityFilter: !!priorityFilter,
+            categoryFilter: !!categoryFilter,
+            sortByPriority: !!sortByPriority,
+            sortByDate: !!sortByDate,
+            sortByCategory: !!sortByCategory
+        });
+        
+        if (priorityFilter) {
+            priorityFilter.addEventListener('change', () => this.filterTodos());
+        }
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', () => this.filterTodos());
+        }
+        if (sortByPriority) {
+            sortByPriority.addEventListener('click', () => {
+                console.log('Sort by priority clicked');
+                this.sortTodos('priority');
+            });
+        }
+        if (sortByDate) {
+            sortByDate.addEventListener('click', () => {
+                console.log('Sort by date clicked');
+                this.sortTodos('date');
+            });
+        }
+        if (sortByCategory) {
+            sortByCategory.addEventListener('click', () => {
+                console.log('Sort by category clicked');
+                this.sortTodos('category');
+            });
+        }
+    },
+    
+    /**
+     * Fetch todos from the backend for a specific date
+     * @param {Date} date - Date to fetch todos for
+     */
+    async fetchTodos(date) {
+        try {
+            const formattedDate = CalendarApp.formatDate(date);
+            const url = `${this.API_URL}?date=${formattedDate}`;
+            console.log('Fetching todos from:', url);
+            
+            const response = await fetch(url);
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                const text = await response.text().catch(() => '');
+                throw new Error(`HTTP ${response.status} when fetching todos. ${text}`);
+            }
+
+            const todos = await response.json();
+            console.log('Received todos:', todos);
+            
+            this.todoList.innerHTML = '';
+
+            if (todos.length === 0) {
+                this.todoList.innerHTML = '<li class="no-tasks">No tasks for this day.</li>';
+            } else {
+                todos.forEach(todo => {
+                    const li = this.createTodoItem(todo);
+                    this.todoList.appendChild(li);
+                });
+            }
+            
+            // Update task dates for calendar indicators
+            this.updateTaskDates();
+
+        } catch (error) {
+            console.error('Failed to fetch todos:', error);
+            console.error('Error details:', error.message);
+            console.error('Error stack:', error.stack);
+            this.todoList.innerHTML = '<li class="error">Error: Could not load tasks from the server.</li>';
+        }
+    },
+    
+    /**
+     * Add a new todo
+     * @param {string} text - Todo text
+     */
+    async addTodo(text) {
+        if (!text) return;
+        
+        try {
+            const selectedDate = CalendarApp.getSelectedDate();
+            const formattedDate = CalendarApp.formatDate(selectedDate);
+            
+            // Get form values
+            const prioritySelect = document.getElementById('priority-select');
+            const dueDateInput = document.getElementById('due-date');
+            const categoryInput = document.getElementById('category-input');
+            
+            const priority = prioritySelect ? (prioritySelect.value || 'medium') : 'medium';
+            const dueDate = dueDateInput ? dueDateInput.value : '';
+            const category = categoryInput ? categoryInput.value : 'Personal';
+            
+            console.log('Sending request to:', this.API_URL);
+            console.log('Request body:', JSON.stringify({ 
+                text: text, 
+                date: formattedDate,
+                priority: priority,
+                dueDate: dueDate,
+                category: category
+            }));
+            
+            const response = await fetch(this.API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    text: text, 
+                    date: formattedDate,
+                    priority: priority,
+                    dueDate: dueDate,
+                    category: category
+                })
+            });
+            
+            if (!response.ok) {
+                const text = await response.text().catch(() => '');
+                throw new Error(`HTTP ${response.status} when creating todo. ${text}`);
+            }
+
+            const newTodo = await response.json();
+            console.log('Received response:', newTodo);
+            
+            // Remove "no tasks" message if it exists
+            const noTasksMessage = this.todoList.querySelector('.no-tasks');
+            if (noTasksMessage) {
+                noTasksMessage.remove();
+            }
+            
+            const li = this.createTodoItem(newTodo);
+            this.todoList.appendChild(li);
+            
+            // Clear form and reset to defaults
+            this.todoInput.value = '';
+            this.todoInput.focus();
+            
+            // Reset priority to medium (default)
+            if (prioritySelect) {
+                prioritySelect.value = 'medium';
+            }
+            
+            // Clear due date
+            if (dueDateInput) {
+                dueDateInput.value = '';
+            }
+            
+            // Clear category
+            if (categoryInput) {
+                categoryInput.value = '';
+            }
+            
+            // Update task dates for calendar indicators
+            this.updateTaskDates();
+            
+            // Show success notification
+            Helpers.showNotification('Task added successfully!', 'success');
+        } catch (error) {
+            console.error('Failed to add todo:', error);
+            Helpers.showNotification('Failed to add task. Please try again.', 'error');
+        }
+    },
+    
+    /**
+     * Delete a todo
+     * @param {string} id - Todo ID
+     */
+    async deleteTodo(id) {
+        try {
+            const response = await fetch(`${this.API_URL}/${id}`, { 
+                method: 'DELETE' 
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            // Remove the todo item from the list visually
+            const itemToRemove = this.todoList.querySelector(`li[data-id='${id}']`);
+            if (itemToRemove) {
+                itemToRemove.remove();
+            }
+            
+            // If no more todos, show "no tasks" message
+            if (this.todoList.children.length === 0) {
+                this.todoList.innerHTML = '<li class="no-tasks">No tasks for this day.</li>';
+            }
+            
+            // Update task dates for calendar indicators
+            this.updateTaskDates();
+            
+            // Show success notification
+            Helpers.showNotification('Task deleted successfully!', 'success');
+        } catch (error) {
+            console.error('Failed to delete todo:', error);
+            Helpers.showNotification('Failed to delete task. Please try again.', 'error');
+        }
+    },
+    
+    /**
+     * Toggle todo completion status
+     * @param {string} id - Todo ID
+     * @param {boolean} completed - New completion status
+     */
+    async toggleComplete(id, completed) {
+        try {
+            const response = await fetch(`${this.API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completed })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const li = this.todoList.querySelector(`li[data-id='${id}']`);
+            if (li) {
+                li.classList.toggle('completed', completed);
+                const completeButton = li.querySelector('.complete-btn');
+                
+                if (completeButton) {
+                    if (completed) {
+                        completeButton.innerHTML = '<i class="fas fa-undo"></i> Undo';
+                    } else {
+                        completeButton.innerHTML = '<i class="fas fa-check"></i> Complete';
+                    }
+                }
+                
+                // Update checkbox if it exists
+                const checkbox = li.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = completed;
+                }
+            }
+        } catch (error) {
+            console.error('Failed to update todo:', error);
+            Helpers.showNotification('Failed to update task status. Please try again.', 'error');
+        }
+    },
+    
+    /**
+     * Handle editing a todo
+     * @param {HTMLElement} li - Todo list item element
+     * @param {HTMLElement} taskTextElement - Todo text element
+     * @param {Object} todo - Todo object
+     */
+    handleEdit(li, taskTextElement, todo) {
+        // Create an input field with the current text
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = taskTextElement.textContent;
+        input.className = 'edit-input';
+        input.autocomplete = 'off';
+        
+        // Get the parent container (task-content)
+        const taskContent = taskTextElement.parentElement;
+        
+        // Replace the task text element with the input field
+        taskContent.replaceChild(input, taskTextElement);
+        input.focus();
+        
+        // When the user clicks away or presses Enter, save the changes
+        const saveChanges = async () => {
+            const newText = input.value.trim();
+            if (newText && newText !== todo.text) {
+                await this.updateTodoText(todo.id, newText);
+                taskTextElement.textContent = newText;
+            }
+            // Restore the original task text element
+            taskContent.replaceChild(taskTextElement, input);
+        };
+        
+        input.addEventListener('blur', saveChanges);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                saveChanges();
+            } else if (e.key === 'Escape') {
+                // If Escape is pressed, cancel the edit
+                taskContent.replaceChild(taskTextElement, input);
+            }
+        });
+    },
+    
+    /**
+     * Update todo text
+     * @param {string} id - Todo ID
+     * @param {string} text - New todo text
+     */
+    async updateTodoText(id, text) {
+        try {
+            const response = await fetch(`${this.API_URL}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text }),
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            // Show success notification
+            Helpers.showNotification('Task updated successfully!', 'success');
+        } catch (error) {
+            console.error('Error updating todo text:', error);
+            Helpers.showNotification('Failed to update task. Please try again.', 'error');
+        }
+    },
+    
+    /**
+     * Create a todo item element
+     * @param {Object} todo - Todo object
+     * @returns {HTMLElement} Todo list item
+     */
+    createTodoItem(todo) {
+        const li = document.createElement('li');
+        li.dataset.id = todo.id;
+        li.dataset.date = todo.date;
+        li.dataset.priority = todo.priority || 'medium';
+        li.dataset.category = todo.category || 'Personal';
+        li.dataset.dueDate = todo.dueDate || '';
+
+        if (todo.completed) {
+            li.classList.add('completed');
+        }
+
+        // Priority indicator
+        const priorityIndicator = document.createElement('div');
+        priorityIndicator.className = `priority-indicator priority-${todo.priority || 'medium'}`;
+
+        // Task content container
+        const taskContent = document.createElement('div');
+        taskContent.className = 'task-content';
+
+        // Task text
+        const taskText = document.createElement('div');
+        taskText.className = 'task-text';
+        taskText.textContent = todo.text;
+
+        // Task metadata
+        const taskMeta = document.createElement('div');
+        taskMeta.className = 'task-meta';
+
+        // Priority text
+        const priorityText = document.createElement('span');
+        priorityText.className = 'task-priority';
+        const priorityLabels = { 'high': '🔴 High', 'medium': '🟡 Medium', 'low': '🟢 Low' };
+        priorityText.textContent = priorityLabels[todo.priority] || '🟡 Medium';
+        taskMeta.appendChild(priorityText);
+
+        // Category badge
+        if (todo.category) {
+            const categoryBadge = document.createElement('span');
+            categoryBadge.className = 'task-category';
+            categoryBadge.textContent = todo.category;
+            taskMeta.appendChild(categoryBadge);
+        }
+
+        // Due date
+        if (todo.dueDate) {
+            const dueDateSpan = document.createElement('span');
+            dueDateSpan.className = 'task-due-date';
+            const dueDate = new Date(todo.dueDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (dueDate < today && !todo.completed) {
+                dueDateSpan.classList.add('overdue');
+            }
+            
+            dueDateSpan.textContent = `📅 Due: ${dueDate.toLocaleDateString()}`;
+            taskMeta.appendChild(dueDateSpan);
+        } else {
+            // Show creation date if no due date
+            const createdDate = new Date(todo.date);
+            const createdDateSpan = document.createElement('span');
+            createdDateSpan.className = 'task-created-date';
+            createdDateSpan.textContent = `📝 Created: ${createdDate.toLocaleDateString()}`;
+            taskMeta.appendChild(createdDateSpan);
+        }
+
+        taskContent.appendChild(taskText);
+        taskContent.appendChild(taskMeta);
+
+        // Buttons wrapper
+        const buttonWrapper = document.createElement('div');
+        buttonWrapper.className = 'button-wrapper';
+
+        // Complete button
+        const completeBtn = document.createElement('button');
+        completeBtn.className = 'complete-btn';
+        completeBtn.innerHTML = todo.completed ? '<i class="fas fa-undo"></i> Undo' : '<i class="fas fa-check"></i> Complete';
+        completeBtn.setAttribute('aria-label', todo.completed ? 'Mark as incomplete' : 'Mark as complete');
+
+        // Edit button
+        const editBtn = document.createElement('button');
+        editBtn.className = 'edit-btn';
+        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        editBtn.setAttribute('aria-label', 'Edit task');
+
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.setAttribute('aria-label', 'Delete task');
+
+        buttonWrapper.appendChild(completeBtn);
+        buttonWrapper.appendChild(editBtn);
+        buttonWrapper.appendChild(deleteBtn);
+
+        // Assemble the todo item
+        li.appendChild(priorityIndicator);
+        li.appendChild(taskContent);
+        li.appendChild(buttonWrapper);
+
+        return li;
+    },
+    
+    /**
+     * Update the task dates object for calendar indicators
+     */
+    updateTaskDates() {
+        // Get all todo items
+        const todoItems = this.todoList.querySelectorAll('li[data-id]');
+        const datesWithTasks = {};
+        
+        todoItems.forEach(item => {
+            const date = item.dataset.date;
+            if (date) {
+                datesWithTasks[date] = true;
+            }
+        });
+        
+        this.taskDates = datesWithTasks;
+        
+        // If CalendarApp is available, update its indicators
+        if (window.CalendarApp && typeof window.CalendarApp.updateDayIndicators === 'function') {
+            window.CalendarApp.updateDayIndicators();
+        }
+        // Also refresh category filter options based on current todos
+        this.updateCategoryFilter();
+    },
+
+    /**
+     * Update the category filter select with categories present in the todo list
+     */
+    updateCategoryFilter() {
+        try {
+            const categorySelect = document.getElementById('category-filter');
+            if (!categorySelect) return;
+
+            // Preserve the currently selected category
+            const previous = categorySelect.value || '';
+
+            // Collect unique categories from current todo items
+            const items = Array.from(this.todoList.querySelectorAll('li[data-id]'));
+            const categories = new Set();
+            items.forEach(it => {
+                const cat = (it.dataset.category || '').toString().trim();
+                if (cat) categories.add(cat);
+            });
+
+            // Clear existing options and add default
+            categorySelect.innerHTML = '';
+            const allOption = document.createElement('option');
+            allOption.value = '';
+            allOption.textContent = 'All Categories';
+            categorySelect.appendChild(allOption);
+
+            // Sort categories for stable UI
+            const sorted = Array.from(categories).sort((a, b) => a.localeCompare(b));
+            sorted.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                categorySelect.appendChild(opt);
+            });
+
+            // Restore previous selection if still available
+            if (previous) {
+                categorySelect.value = previous;
+            }
+        } catch (err) {
+            console.error('Error updating category filter:', err);
+        }
+    },
+    
+    /**
+     * Get dates that have tasks
+     * @returns {Object} - An object with dates as keys
+     */
+    getDatesWithTasks() {
+        return this.taskDates;
+    },
+    
+    /**
+     * Filter todos based on priority and category
+     */
+    filterTodos() {
+        const priorityFilter = document.getElementById('priority-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const todos = Array.from(this.todoList.children);
+        
+        const selectedPriority = priorityFilter ? priorityFilter.value : '';
+        const selectedCategory = categoryFilter ? categoryFilter.value : '';
+        
+        todos.forEach(todo => {
+            const priority = todo.dataset.priority || '';
+            const category = todo.dataset.category || '';
+            
+            let showTodo = true;
+            
+            if (selectedPriority && priority !== selectedPriority) {
+                showTodo = false;
+            }
+            
+            if (selectedCategory && category !== selectedCategory) {
+                showTodo = false;
+            }
+            
+            todo.style.display = showTodo ? 'flex' : 'none';
+        });
+        
+        console.log('Filtering todos:', {
+            selectedPriority,
+            selectedCategory,
+            totalTodos: todos.length,
+            visibleTodos: todos.filter(todo => todo.style.display !== 'none').length
+        });
+    },
+    
+    /**
+     * Sort todos by priority, date, or category
+     * @param {string} sortBy - 'priority', 'date', or 'category'
+     */
+    sortTodos(sortBy) {
+        const todos = Array.from(this.todoList.children);
+        
+        console.log('Sorting todos by:', sortBy);
+        console.log('Total todos found:', todos.length);
+        
+        if (todos.length === 0) {
+            console.log('No todos to sort');
+            return;
+        }
+        
+        console.log('Todos before sorting:', todos.map(todo => ({
+            id: todo.dataset.id,
+            priority: todo.dataset.priority,
+            category: todo.dataset.category,
+            dueDate: todo.dataset.dueDate
+        })));
+        
+        todos.sort((a, b) => {
+            if (sortBy === 'priority') {
+                const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+                const aPriority = priorityOrder[a.dataset.priority] || 0;
+                const bPriority = priorityOrder[b.dataset.priority] || 0;
+                return bPriority - aPriority;
+            } else if (sortBy === 'date') {
+                const aDate = a.dataset.dueDate ? new Date(a.dataset.dueDate) : new Date('9999-12-31');
+                const bDate = b.dataset.dueDate ? new Date(b.dataset.dueDate) : new Date('9999-12-31');
+                return aDate - bDate;
+            } else if (sortBy === 'category') {
+                const aCategory = a.dataset.category || '';
+                const bCategory = b.dataset.category || '';
+                return aCategory.localeCompare(bCategory);
+            }
+            return 0;
+        });
+        
+        console.log('Todos after sorting:', todos.map(todo => ({
+            id: todo.dataset.id,
+            priority: todo.dataset.priority,
+            category: todo.dataset.category,
+            dueDate: todo.dataset.dueDate
+        })));
+        
+        // Clear the list and re-append sorted todos
+        this.todoList.innerHTML = '';
+        todos.forEach(todo => {
+            this.todoList.appendChild(todo);
+            // Make sure the todo is visible after sorting
+            todo.style.display = 'flex';
+        });
+    },
+    
+    /**
+     * Add sample todos to demonstrate the functionality
+     */
+    async addSampleTodos() {
+        // Check if there are already todos
+        const existingTodos = this.todoList.children.length;
+        if (existingTodos > 0) {
+            console.log('Sample todos already exist, skipping...');
+            return;
+        }
+        
+        console.log('Adding sample todos...');
+        
+        const sampleTodos = [
+            {
+                text: "Book flight tickets to Japan",
+                priority: "high",
+                category: "Trip Planning",
+                dueDate: "2024-12-15"
+            },
+            {
+                text: "Apply for tourist visa",
+                priority: "high", 
+                category: "Trip Planning",
+                dueDate: "2024-11-30"
+            },
+            {
+                text: "Research hotels in Tokyo",
+                priority: "medium",
+                category: "Trip Planning", 
+                dueDate: "2024-12-01"
+            },
+            {
+                text: "Create travel itinerary",
+                priority: "medium",
+                category: "Trip Planning",
+                dueDate: "2024-12-10"
+            },
+            {
+                text: "Buy travel insurance",
+                priority: "medium",
+                category: "Trip Planning",
+                dueDate: "2024-12-05"
+            },
+            {
+                text: "Complete project report",
+                priority: "high",
+                category: "Work",
+                dueDate: "2024-11-25"
+            },
+            {
+                text: "Team meeting preparation",
+                priority: "medium",
+                category: "Work",
+                dueDate: "2024-11-28"
+            },
+            {
+                text: "Grocery shopping",
+                priority: "low",
+                category: "Personal",
+                dueDate: "2024-11-24"
+            },
+            {
+                text: "Call dentist for appointment",
+                priority: "low",
+                category: "Personal",
+                dueDate: "2024-12-20"
+            },
+            {
+                text: "Learn basic Japanese phrases",
+                priority: "low",
+                category: "Trip Planning",
+                dueDate: "2024-12-01"
+            }
+        ];
+        
+        // Add sample todos to the backend
+        for (const todo of sampleTodos) {
+            try {
+                const selectedDate = CalendarApp.getSelectedDate();
+                const formattedDate = CalendarApp.formatDate(selectedDate);
+                
+                const response = await fetch(this.API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: todo.text,
+                        date: formattedDate,
+                        priority: todo.priority,
+                        dueDate: todo.dueDate,
+                        category: todo.category
+                    })
+                });
+                
+                if (response.ok) {
+                    const newTodo = await response.json();
+                    console.log('Added sample todo:', newTodo);
+                }
+            } catch (error) {
+                console.error('Error adding sample todo:', error);
+            }
+        }
+        
+        // Refresh the todo list to show the new items
+        this.fetchTodos(CalendarApp.getSelectedDate());
+    }
+};

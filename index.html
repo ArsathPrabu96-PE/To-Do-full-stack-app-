@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arsath Pabu- Portfolio</title>
+    <title>Arsath Prabu - Portfolio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="style.css">
-</head><body>
+    <link rel="icon" href="data:,"> <!-- Add this line to prevent favicon error -->
+</head>
+<body>
     <header>
         <h1>Arsath Prabu</h1>
         <p>AI Full Stack Developer</p>
@@ -17,62 +21,97 @@
     <nav>
         <a href="#about">About Me</a>
         <a href="#projects">My Projects</a>
+        <a href="#dsa">DSA</a>
         <a href="#todo-app">To-Do App</a>
-        <a href="#calendar-section">Calendar</a>
+        <a href="#calendar">Calendar</a>
         <a href="#contact">Contact</a>
     </nav>
 
     <main>
-        <section id="about">
+        <section id="about" class="animate-on-scroll">
             <h2>About Me</h2>
             <!-- Make sure to add a profile.jpg file in the same folder, or change the src to your image URL -->
-            <img src="/69960739-1f3c-4d8a-b965-5a24388e648f.jpg" alt="A portrait of me" class="profile-pic">
-            <p>I am Arsath Prabu.R a self-taught AI Full-Stack Developer with experience in JavaScript, Python, React, HTML, CSS, and Arduino.</p> 
+            <img src="69960739-1f3c-4d8a-b965-5a24388e648f.jpg" alt="Profile Picture" class="profile-pic">
+            <p>Hello! I'm a passionate developer creating modern and responsive web applications. This portfolio showcases my journey and skills in the world of tech.</p> 
             <div id="extra-info" class="hidden">
                 <p>I specialize in problem-solving, building clean UIs, integrating APIs, deploying applications, and developing IoT solutions.</p> 
                 <p>I have built projects like a To-Do List App and a Personal Portfolio, and I continuously learn and experiment to enhance my skills.</p>
                 <p>Certified in Software Testing, Cybersecurity, and Ethical Hacking, I combine creativity and professionalism to deliver impactful software solutions.</p>
             </div>
-            <button id="show-more-btn" class="btn-secondary">Show More</button>
+            <button id="show-more-btn" class="btn-secondary"><i class="fas fa-chevron-down"></i> Show More</button>
         </section>
 
-        <section id="projects">
+        <section id="projects" class="animate-on-scroll">
             <h2>My Projects</h2>
             <div class="project">
                 <h3>Project One : To-Do List </h3>
                 <p>A Todo List Web Application is a simple productivity tool that helps users organize and manage their daily tasks. It allows users to add, edit, complete, and delete tasks in a clean and user-friendly interface.</p>
                         <p>This application is built using HTML, CSS, and JavaScript with a responsive design, making it accessible on both desktop and mobile devices. Tasks are stored in the browser’s Local Storage, so users don’t lose their data after refreshing or closing the app.</p>
-                <a href="https://arsathprabu96-pe.github.io/My_trackrs/" target="_blank"> <i class="fas fa-code-branch" target="_blank">View Project</a>
+                <a href="https://arsathprabu96-pe.github.io/My_trackrs/" target="_blank"><i class="fas fa-external-link-alt"></i> View Project</a>
             </div>
             <div class="project">
                 <h3>Project Two : Personal Portfolio Web App</h3>
                  <p>Built a personal portfolio website with <strong>HTML, CSS, and JavaScript</strong>.</p>
                         <p>Used <strong>AI-assisted development tools</strong> to streamline the coding and design workflow.</p>
                         <p>Personally handled the <strong>layout, interactive components, and responsive design</strong>.</p>
-                <a href="https://arsathprabu96-pe.github.io/per_personav1/" target="_blank" target="_blank">View Project</a>
+                <a href="https://arsathprabu96-pe.github.io/per_personav1/" target="_blank"><i class="fas fa-external-link-alt"></i> View Project</a>
             </div>
         </section>
 
         <!-- To-Do List App -->
-        <section id="todo-app">
-            <h2>My To-Do List</h2>
+        <section id="todo-app" class="animate-on-scroll">
+            <h2>My Personal To-Do List</h2>
             <form id="todo-form">
-                <input type="text" id="todo-input" placeholder="Add a new task..." required>
-                <button type="submit">Add Task</button>
+                <div class="form-row">
+                    <input type="text" id="todo-input" placeholder="New task..." required autocomplete="off">
+                    <select id="priority-select" required>
+                        <option value="">Priority</option>
+                        <option value="high">🔴 High Priority</option>
+                        <option value="medium" selected>🟡 Medium Priority</option>
+                        <option value="low">🟢 Low Priority</option>
+                    </select>
+                    <input type="date" id="due-date" placeholder="Due Date">
+                </div>
+                <div class="form-row">
+                    <input type="text" id="category-input" placeholder="Category (e.g., Work, Personal, Trip Planning)" autocomplete="off">
+                    <button type="submit"><i class="fas fa-plus"></i> Add Task</button>
+                </div>
             </form>
+            
+            <!-- Filter and Sort Controls -->
+            <div class="todo-controls">
+                <div class="filter-controls">
+                    <select id="priority-filter">
+                        <option value="">All Priorities</option>
+                        <option value="high">High Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="low">Low Priority</option>
+                    </select>
+                    <select id="category-filter">
+                        <option value="">All Categories</option>
+                        <option value="Trip Planning">Trip Planning</option>
+                        <option value="Work">Work</option>
+                        <option value="Personal">Personal</option>
+                    </select>
+                    <button id="sort-by-priority"><i class="fas fa-sort"></i> Sort by Priority</button>
+                    <button id="sort-by-date"><i class="fas fa-calendar"></i> Sort by Date</button>
+                    <button id="sort-by-category"><i class="fas fa-tags"></i> Sort by Category</button>
+                </div>
+            </div>
+            
             <ul id="todo-list">
-                <!-- Tasks will be added here by JavaScript -->
+                <!-- To-do items will be dynamically inserted here -->
             </ul>
         </section>
 
         <!-- NEW: Calendar Section -->
-        <section class="card" id="calendar-section">
+        <section id="calendar" class="animate-on-scroll">
             <h2>Calendar</h2>
             <div class="calendar-container">
                 <div class="calendar-header">
-                    <button id="prev-month-btn" aria-label="Previous Month">&lt;</button>
+                    <button id="prev-month-btn" aria-label="Previous Month"><i class="fas fa-chevron-left"></i></button>
                     <h3 id="month-year-display"></h3>
-                    <button id="next-month-btn" aria-label="Next Month">&gt;</button>
+                    <button id="next-month-btn" aria-label="Next Month"><i class="fas fa-chevron-right"></i></button>
                 </div>
                 <div class="calendar-grid">
                     <div class="day-name">Sun</div>
@@ -87,26 +126,60 @@
             </div>
         </section>
 
+        <!-- NEW: Data Structures & Algorithms Section -->
+        <section id="dsa" class="animate-on-scroll">
+            <h2>Data Structures & Algorithms</h2>
+            <p>Interactive examples and visualizations for fundamental algorithms. Try sorting small arrays to see step-by-step changes.</p>
+
+            <div class="dsa-controls">
+                <label for="algorithm-select">Algorithm:</label>
+                <select id="algorithm-select">
+                    <option value="bubble">Bubble Sort</option>
+                    <option value="insertion">Insertion Sort</option>
+                </select>
+
+                <label for="array-input">Array (comma-separated):</label>
+                <input type="text" id="array-input" placeholder="e.g. 5,3,8,1,2" aria-label="Array input">
+
+                <label for="speed-range">Speed:</label>
+                <input type="range" id="speed-range" min="50" max="1000" value="250">
+
+                <button id="run-algo-btn" class="btn-primary"><i class="fas fa-play"></i> Run</button>
+                <button id="stop-algo-btn" class="btn-secondary" disabled><i class="fas fa-stop"></i> Stop</button>
+            </div>
+
+            <div id="dsa-output" class="dsa-output" aria-live="polite">
+                <!-- Visualization will appear here -->
+            </div>
+        </section>
+
         <!-- Contact Section -->
-        <section id="contact">
-            <h2>Contact Me</h2>
+        <section id="contact" class="animate-on-scroll">
+            <h2><i class="fas fa-envelope"></i> Contact Me</h2>
             <p>Have a question or want to work together? Send me a message!</p>
             <form id="contact-form">
                 <div class="form-row">
-                    <input type="text" id="name" name="name" placeholder="Your Name" required>
-                    <input type="email" id="email" name="email" placeholder="Your Email" required>
+                    <input type="text" id="name" name="name" placeholder="Your Name" required autocomplete="name" aria-label="Your Name">
+                    <input type="email" id="email" name="email" placeholder="Your Email" required autocomplete="email" aria-label="Your Email">
                 </div>
-                <textarea id="message" name="message" rows="5" placeholder="Your Message" required></textarea>
-                <button type="submit">Send Message</button>
+                <textarea id="message" name="message" rows="5" placeholder="Your Message" required autocomplete="message" aria-label="Your Message"></textarea>
+                <button type="submit"><i class="fas fa-paper-plane"></i> Send Message</button>
             </form>
         </section>
 
     </main>
 
     <footer>
-        <p>&copy; 2023 Your Name. All rights reserved.</p>
+        <p>&copy; 2024 Arsath Prabu. All rights reserved.</p>
     </footer>
 
-    <script src="script.js"></script>
+    <!-- Modular JS files -->
+    <script src="js/modules/helpers.js"></script>
+    <script src="js/modules/ui-effects.js"></script>
+    <script src="js/modules/form-validator.js"></script>
+    <script src="js/modules/calendar-app.js"></script>
+    <script src="js/modules/todo-app.js"></script>
+    <script src="js/modules/dsa.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
