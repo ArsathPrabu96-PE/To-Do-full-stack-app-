@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arsath Pabu- Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head><body>
+    <header>
+        <h1>Arsath Prabu</h1>
+        <p>AI Full Stack Developer</p>
+    </header>
+
+    <nav>
+        <a href="#about">About Me</a>
+        <a href="#projects">My Projects</a>
+        <a href="#todo-app">To-Do App</a>
+        <a href="#calendar-section">Calendar</a>
+        <a href="#contact">Contact</a>
+    </nav>
+
+    <main>
+        <section id="about">
+            <h2>About Me</h2>
+            <!-- Make sure to add a profile.jpg file in the same folder, or change the src to your image URL -->
+            <img src="/69960739-1f3c-4d8a-b965-5a24388e648f.jpg" alt="A portrait of me" class="profile-pic">
+            <p>I am Arsath Prabu.R a self-taught AI Full-Stack Developer with experience in JavaScript, Python, React, HTML, CSS, and Arduino.</p> 
+            <div id="extra-info" class="hidden">
+                <p>I specialize in problem-solving, building clean UIs, integrating APIs, deploying applications, and developing IoT solutions.</p> 
+                <p>I have built projects like a To-Do List App and a Personal Portfolio, and I continuously learn and experiment to enhance my skills.</p>
+                <p>Certified in Software Testing, Cybersecurity, and Ethical Hacking, I combine creativity and professionalism to deliver impactful software solutions.</p>
+            </div>
+            <button id="show-more-btn" class="btn-secondary">Show More</button>
+        </section>
+
+        <section id="projects">
+            <h2>My Projects</h2>
+            <div class="project">
+                <h3>Project One : To-Do List </h3>
+                <p>A Todo List Web Application is a simple productivity tool that helps users organize and manage their daily tasks. It allows users to add, edit, complete, and delete tasks in a clean and user-friendly interface.</p>
+                        <p>This application is built using HTML, CSS, and JavaScript with a responsive design, making it accessible on both desktop and mobile devices. Tasks are stored in the browser’s Local Storage, so users don’t lose their data after refreshing or closing the app.</p>
+                <a href="https://arsathprabu96-pe.github.io/My_trackrs/" target="_blank"> <i class="fas fa-code-branch" target="_blank">View Project</a>
+            </div>
+            <div class="project">
+                <h3>Project Two : Personal Portfolio Web App</h3>
+                 <p>Built a personal portfolio website with <strong>HTML, CSS, and JavaScript</strong>.</p>
+                        <p>Used <strong>AI-assisted development tools</strong> to streamline the coding and design workflow.</p>
+                        <p>Personally handled the <strong>layout, interactive components, and responsive design</strong>.</p>
+                <a href="https://arsathprabu96-pe.github.io/per_personav1/" target="_blank" target="_blank">View Project</a>
+            </div>
+        </section>
+
+        <!-- To-Do List App -->
+        <section id="todo-app">
+            <h2>My To-Do List</h2>
+            <form id="todo-form">
+                <input type="text" id="todo-input" placeholder="Add a new task..." required>
+                <button type="submit">Add Task</button>
+            </form>
+            <ul id="todo-list">
+                <!-- Tasks will be added here by JavaScript -->
+            </ul>
+        </section>
+
+        <!-- NEW: Calendar Section -->
+        <section class="card" id="calendar-section">
+            <h2>Calendar</h2>
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button id="prev-month-btn" aria-label="Previous Month">&lt;</button>
+                    <h3 id="month-year-display"></h3>
+                    <button id="next-month-btn" aria-label="Next Month">&gt;</button>
+                </div>
+                <div class="calendar-grid">
+                    <div class="day-name">Sun</div>
+                    <div class="day-name">Mon</div>
+                    <div class="day-name">Tue</div>
+                    <div class="day-name">Wed</div>
+                    <div class="day-name">Thu</div>
+                    <div class="day-name">Fri</div>
+                    <div class="day-name">Sat</div>
+                </div>
+                <div class="calendar-days" id="calendar-days"></div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact">
+            <h2>Contact Me</h2>
+            <p>Have a question or want to work together? Send me a message!</p>
+            <form id="contact-form">
+                <div class="form-row">
+                    <input type="text" id="name" name="name" placeholder="Your Name" required>
+                    <input type="email" id="email" name="email" placeholder="Your Email" required>
+                </div>
+                <textarea id="message" name="message" rows="5" placeholder="Your Message" required></textarea>
+                <button type="submit">Send Message</button>
+            </form>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2023 Your Name. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
