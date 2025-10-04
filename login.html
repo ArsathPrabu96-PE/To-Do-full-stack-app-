@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <section>
+      <h2>Login</h2>
+      <form id="login-form">
+        <div class="form-row">
+          <input type="email" id="email" placeholder="Email" required>
+        </div>
+        <div class="form-row password-row">
+          <div class="password-wrapper">
+            <input type="password" id="password" placeholder="Password" required />
+            <button type="button" class="show-pass-btn" data-target="#password" aria-label="Show password">👁️</button>
+          </div>
+          <a href="#" id="forgot-password" class="forgot-link">Forgot password?</a>
+        </div>
+        <div class="form-row">
+          <button type="submit">Login</button>
+          <a href="signup.html">Create an account</a>
+        </div>
+      </form>
+      <div id="login-msg" aria-live="polite"></div>
+    </section>
+  </main>
+  <script src="js/modules/auth.js"></script>
+</body>
+</html>

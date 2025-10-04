@@ -31,4 +31,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     console.log('Application initialized successfully');
+
+    // --- Auth UI handling ---
+    const logoutBtn = document.getElementById('logout-btn');
+    const userEmailSpan = document.getElementById('user-email');
+
+    function updateAuthUI(){
+        const token = localStorage.getItem('token');
+        if(token){
+            // try decode simple payload to show email if present
+            try{
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                userEmailSpan.textContent = payload.email || '';
+            }catch(e){ userEmailSpan.textContent = '' }
+            userEmailSpan.classList.remove('hidden');
+            logoutBtn.classList.remove('hidden');
+        } else {
+            userEmailSpan.classList.add('hidden');
+            logoutBtn.classList.add('hidden');
+        }
+    }
+
+    if(logoutBtn){
+        logoutBtn.addEventListener('click', ()=>{
+            localStorage.removeItem('token');
+            updateAuthUI();
+            // Redirect to login page if it exists
+            try{ location.href = 'login.html'; }catch(e){ location.reload(); }
+        });
+    }
+
+    updateAuthUI();
 });

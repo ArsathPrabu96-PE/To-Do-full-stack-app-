@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sign Up</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <section>
+      <h2>Create an account</h2>
+      <form id="signup-form">
+        <div class="form-row">
+          <input type="email" id="email" placeholder="Email" required>
+        </div>
+        <div class="form-row password-row">
+          <div class="password-wrapper">
+            <input type="password" id="password" placeholder="Password" required aria-describedby="pw-strength" />
+            <button type="button" class="show-pass-btn" data-target="#password" aria-label="Show password">👁️</button>
+          </div>
+          <div id="pw-loading" class="spinner-3d hidden" aria-hidden="true"></div>
+        </div>
+        <div class="form-row">
+          <div class="password-wrapper">
+            <input type="password" id="password-confirm" placeholder="Confirm password" required />
+            <button type="button" class="show-pass-btn" data-target="#password-confirm" aria-label="Show password">👁️</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div id="pw-strength" class="strength-meter" aria-hidden="false">
+            <div class="strength-bar"></div>
+            <div class="strength-label">&nbsp;</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <button type="submit">Sign up</button>
+          <a href="login.html">Already have an account? Login</a>
+        </div>
+      </form>
+      <div id="signup-msg" aria-live="polite"></div>
+    </section>
+  </main>
+  <script src="js/modules/auth.js"></script>
+</body>
+</html>

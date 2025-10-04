@@ -1,21 +1,9 @@
 To-Do Full Stack App - User Manual
 
-Version: 1.2.0
+Version: 1.2.1
 
-Overview
---------
-This To-Do Full Stack App includes a front-end single-page portfolio with an integrated To-Do list, calendar, and a small DSA visualizer. The backend is a simple Express.js API using SQLite for persistence. This manual explains how to run the app, use the features, and resolve common issues.
-
-Contents
---------
-1. Quick start (development)
-2. Front-end usage (how to add tasks, categories, filters, sorting)
-3. Backend API (endpoints and payloads)
-4. Troubleshooting
-5. Maintenance & data
-
-1) Quick start (development)
-----------------------------
+Quick start (development)
+-------------------------
 Requirements
 - Node.js (v14+ recommended)
 - npm
@@ -38,6 +26,18 @@ Running the front-end
 - Open `index.html` in your browser (served using Live Server on port 5501 or file://). For best results use a static file server:
   python -m http.server 5501
   then open http://127.0.0.1:5501
+
+Overview
+--------
+This To-Do Full Stack App includes a front-end single-page portfolio with an integrated To-Do list, calendar, and a small DSA visualizer. The backend is a simple Express.js API using SQLite for persistence. This manual explains how to run the app, use the features, and resolve common issues.
+
+Contents
+--------
+1. Quick start (development)
+2. Front-end usage (how to add tasks, categories, filters, sorting)
+3. Backend API (endpoints and payloads)
+4. Troubleshooting
+5. Maintenance & data
 
 2) Front-end usage
 ------------------
@@ -92,3 +92,12 @@ Problem: Category not updating / only "Personal" appears
 Contact & Support
 -----------------
 If you provide the exact console/network error, I can help debug further.
+
+6) Authentication (signup / login / logout)
+-----------------------------------------
+- Signup: Open `signup.html` and fill in email and password. The page performs a client-side password strength check and shows a 3D spinner while the request is processed. On success the page redirects to `login.html`.
+- Login: Open `login.html`, enter your credentials and log in. On successful login a JWT token is saved to `localStorage` and you'll be redirected to the main page. The header shows your email and a Logout button when logged in.
+- Logout: Click the Logout button in the top-right header to clear the token and return to the login page.
+
+Notes:
+- Password resets / forgot-password is a UI placeholder that currently prompts for an email; implementing a secure reset flow requires a backend email/send mechanism which is not included by default.

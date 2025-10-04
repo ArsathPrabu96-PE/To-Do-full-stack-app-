@@ -14,14 +14,19 @@
 </head>
 <body>
     <header>
-        <h1>Arsath Prabu</h1>
-        <p>AI Full Stack Developer</p>
+        <div class="header-left">
+            <h1>Arsath Prabu</h1>
+            <p>AI Full Stack Developer</p>
+        </div>
+        <div class="header-right">
+            <span id="user-email" class="hidden"></span>
+            <button id="logout-btn" class="hidden">Logout</button>
+        </div>
     </header>
 
     <nav>
         <a href="#about">About Me</a>
         <a href="#projects">My Projects</a>
-        <a href="#dsa">DSA</a>
         <a href="#todo-app">To-Do App</a>
         <a href="#calendar">Calendar</a>
         <a href="#contact">Contact</a>
@@ -126,32 +131,7 @@
             </div>
         </section>
 
-        <!-- NEW: Data Structures & Algorithms Section -->
-        <section id="dsa" class="animate-on-scroll">
-            <h2>Data Structures & Algorithms</h2>
-            <p>Interactive examples and visualizations for fundamental algorithms. Try sorting small arrays to see step-by-step changes.</p>
-
-            <div class="dsa-controls">
-                <label for="algorithm-select">Algorithm:</label>
-                <select id="algorithm-select">
-                    <option value="bubble">Bubble Sort</option>
-                    <option value="insertion">Insertion Sort</option>
-                </select>
-
-                <label for="array-input">Array (comma-separated):</label>
-                <input type="text" id="array-input" placeholder="e.g. 5,3,8,1,2" aria-label="Array input">
-
-                <label for="speed-range">Speed:</label>
-                <input type="range" id="speed-range" min="50" max="1000" value="250">
-
-                <button id="run-algo-btn" class="btn-primary"><i class="fas fa-play"></i> Run</button>
-                <button id="stop-algo-btn" class="btn-secondary" disabled><i class="fas fa-stop"></i> Stop</button>
-            </div>
-
-            <div id="dsa-output" class="dsa-output" aria-live="polite">
-                <!-- Visualization will appear here -->
-            </div>
-        </section>
+        <!-- DSA section removed as requested -->
 
         <!-- Contact Section -->
         <section id="contact" class="animate-on-scroll">
@@ -179,7 +159,6 @@
     <script src="js/modules/form-validator.js"></script>
     <script src="js/modules/calendar-app.js"></script>
     <script src="js/modules/todo-app.js"></script>
-    <script src="js/modules/dsa.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
