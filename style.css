@@ -1488,6 +1488,20 @@ h1, .profile-pic + p, header h1 { font-weight: 800 !important; }
 /* Slightly faster FAB hover to match new timing */
 .fab-add { transition-duration: 160ms !important; }
 
+/* To-Do status indicator */
+.todo-status { display:flex; align-items:center; gap:10px; margin-top:8px; margin-bottom:6px; }
+.todo-status .status { padding:6px 10px; border-radius:12px; font-size:0.9rem; font-weight:600; }
+.todo-status .status.connected { background: linear-gradient(90deg,#2ed573,#1dd1a1); color:#083; color: #fff; box-shadow: 0 4px 12px rgba(46,213,115,0.16); }
+.todo-status .status.disconnected { background: linear-gradient(90deg,#e74c3c,#ff6b6b); color:#fff; box-shadow: 0 4px 12px rgba(231,76,60,0.16); }
+.todo-status .btn-small { padding:6px 10px; }
+
+/* Demo todo visual treatment */
+li[data-id^="demo-"] { opacity: 0.78; border-style: dashed; }
+li[data-id^="demo-"] .task-text::after { content: ' (demo)'; font-size:0.85rem; color:#666; margin-left:6px; }
+
+/* Offline-persisted todo look */
+.offline-persisted { box-shadow: inset 0 0 0 2px rgba(255,193,7,0.08); }
+
 
 /* Drag and drop styles */
 #todo-list li.dragging {

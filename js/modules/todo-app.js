@@ -37,9 +37,10 @@ const TodoApp = {
         console.log('Setting up event listeners');
         this.setupEventListeners();
         
-        // Initial fetch of todos for today
-        console.log('Fetching initial todos for today');
-        this.fetchTodos(new Date());
+    // Initial fetch of todos for today
+    console.log('Fetching initial todos for today');
+    this.updateConnectionIndicator('checking');
+    this.healthCheckAndFetch(new Date());
     // Populate category filter on load (will update after fetch completes)
     this.updateCategoryFilter();
         
@@ -144,9 +145,24 @@ const TodoApp = {
      * @param {Date} date - Date to fetch todos for
      */
     async fetchTodos(date) {
+        // Ensure we always have a usable date string even if CalendarApp is unavailable
+        const formattedDate = (function (d) {
+            try {
+                if (window.CalendarApp && typeof CalendarApp.formatDate === 'function') {
+                    return CalendarApp.formatDate(d);
+                }
+            } catch (e) { /* ignore and fallback */ }
+            // Fallback to ISO date (YYYY-MM-DD)
+            try {
+                const _d = d instanceof Date ? d : new Date(d);
+                return _d.toISOString().slice(0, 10);
+            } catch (e) {
+                return new Date().toISOString().slice(0, 10);
+            }
+        })(date);
+
         try {
-            const formattedDate = CalendarApp.formatDate(date);
-            const url = `${this.API_URL}?date=${formattedDate}`;
+            const url = `${this.API_URL}?date=${encodeURIComponent(formattedDate)}`;
             console.log('Fetching todos from:', url);
             
             const headers = this._authHeaders();
@@ -203,9 +219,117 @@ const TodoApp = {
             ];
             demoTodos.forEach(todo => {
                 const li = this.createTodoItem(todo);
+                // mark visually as demo
+                li.dataset.id = todo.id;
                 this.todoList.appendChild(li);
             });
+            // Update connection indicator to disconnected
+            this.updateConnectionIndicator('disconnected');
         }
+    },
+
+    /**
+     * Update the top connection indicator UI
+     * @param {'connected'|'disconnected'|'checking'} state
+     */
+    updateConnectionIndicator(state) {
+        const indicator = document.getElementById('connection-indicator');
+        if (!indicator) return;
+        indicator.classList.remove('connected', 'disconnected', 'checking');
+        if (state === 'connected') {
+            indicator.classList.add('connected');
+            indicator.textContent = 'Connected';
+        } else if (state === 'disconnected') {
+            indicator.classList.add('disconnected');
+            indicator.textContent = 'Disconnected';
+        } else {
+            indicator.classList.add('checking');
+            indicator.textContent = 'Checking...';
+        }
+    },
+
+    /**
+     * Simple health check with retry/backoff before showing offline demo UI
+     */
+    async healthCheckAndFetch(date) {
+        const maxAttempts = 3;
+        let attempt = 0;
+        let ok = false;
+
+        while (attempt < maxAttempts && !ok) {
+            try {
+                this.updateConnectionIndicator('checking');
+                // ping a lightweight endpoint. If /health exists server should respond; otherwise try GET /todos without date
+                const healthUrl = this.API_URL.replace(/\/todos\/?$/, '/health');
+                const headers = this._authHeaders();
+                const resp = await fetch(healthUrl, { method: 'GET', headers });
+                if (resp.ok) {
+                    ok = true;
+                    break;
+                }
+            } catch (e) {
+                // ignore and retry
+            }
+
+            // exponential backoff
+            const waitMs = Math.pow(2, attempt) * 250; // 250, 500, 1000
+            await new Promise(r => setTimeout(r, waitMs));
+            attempt++;
+        }
+
+        if (ok) {
+            this.updateConnectionIndicator('connected');
+            await this.fetchTodos(date);
+        } else {
+            this.updateConnectionIndicator('disconnected');
+            // show demo todos but still call fetch to populate if it succeeds later
+            await this.fetchTodos(date);
+        }
+
+        // Wire retry button
+        const retryBtn = document.getElementById('retry-connection');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', async () => {
+                this.updateConnectionIndicator('checking');
+                await this.healthCheckAndFetch(date);
+            });
+        }
+    },
+
+    /**
+     * Save a todo locally when offline. Returns the created todo object.
+     */
+    saveTodoOffline(text, formattedDate) {
+        const key = 'offline_todos';
+        const store = JSON.parse(localStorage.getItem(key) || '[]');
+        const id = `offline-${Date.now()}`;
+        const todo = { id, text, completed: 0, date: formattedDate, category: 'Personal', priority: 'medium' };
+        store.push(todo);
+        localStorage.setItem(key, JSON.stringify(store));
+        return todo;
+    },
+
+    /**
+     * Try to sync offline saved todos (called on successful health check)
+     */
+    async syncOfflineTodos() {
+        try {
+            const key = 'offline_todos';
+            const store = JSON.parse(localStorage.getItem(key) || '[]');
+            if (!store.length) return;
+            for (const t of store) {
+                try {
+                    const headers = Object.assign({ 'Content-Type': 'application/json' }, this._authHeaders());
+                    const resp = await fetch(this.API_URL, { method: 'POST', headers, body: JSON.stringify({ text: t.text, date: t.date, priority: t.priority, category: t.category }) });
+                    if (resp.ok) {
+                        // remove from store
+                        // (we'll collect remaining later)
+                    }
+                } catch (e) { /* keep it for next sync */ }
+            }
+            // Clear offline store after attempted sync (simple approach); a more robust approach would remove only successfully synced items
+            localStorage.removeItem(key);
+        } catch (e) { /* noop */ }
     },
     
     /**
@@ -296,6 +420,22 @@ const TodoApp = {
             Helpers.showNotification('Task added successfully!', 'success');
         } catch (error) {
             console.error('Failed to add todo:', error);
+            // If this was a network-level failure, persist locally and show demo/offline item
+            const isNetworkError = (error instanceof TypeError && /failed to fetch|network/i.test(error.message));
+            if (isNetworkError) {
+                try {
+                    const offline = this.saveTodoOffline(text, formattedDate);
+                    const li = this.createTodoItem(offline);
+                    li.classList.add('offline-persisted');
+                    this.todoList.appendChild(li);
+                    Helpers.showNotification('You are offline — task saved locally and will sync when connection is restored.', 'warning');
+                    this.updateTaskDates();
+                    return;
+                } catch (e) {
+                    console.error('Failed to save todo offline:', e);
+                }
+            }
+
             Helpers.showNotification('Failed to add task. Please try again.', 'error');
         }
     },
