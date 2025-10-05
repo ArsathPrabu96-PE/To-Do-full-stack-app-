@@ -104,8 +104,11 @@ const CalendarApp = {
             
             const className = `calendar-day${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}`;
             
+            // Attach a data-date attribute for easy lookups (YYYY-MM-DD)
+            const dateString = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
             const dayElement = Helpers.createElement('div', {
-                className: className
+                className: className,
+                'data-date': dateString
             }, i);
             
             this.calendarDays.appendChild(dayElement);
@@ -138,25 +141,52 @@ const CalendarApp = {
         existingIndicators.forEach(indicator => indicator.remove());
         
         // Add new indicators
+        // For each date in the map, find the matching day element by data-date
         Object.keys(taskDates).forEach(dateString => {
-            const date = new Date(dateString);
-            
-            // Only add indicators for the current month
-            if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
-                const day = date.getDate();
-                const dayElement = this.calendarDays.querySelector(`.calendar-day:not(.other-month):nth-child(n+${firstDayOfMonth + 1}):nth-child(-n+${firstDayOfMonth + daysInMonth})`);
-                
-                if (dayElement && dayElement.textContent == day) {
-                    const count = taskDates[dateString];
-                    const indicator = Helpers.createElement('span', {
-                        className: 'task-indicator',
-                        title: `${count} task${count !== 1 ? 's' : ''}`
-                    }, count);
-                    
-                    dayElement.appendChild(indicator);
-                }
+            const count = taskDates[dateString];
+            const dayElement = this.calendarDays.querySelector(`.calendar-day[data-date='${dateString}']`);
+            if (!dayElement) return;
+
+            // Add or update badge
+            let badge = dayElement.querySelector('.task-count-badge');
+            if (!badge) {
+                badge = Helpers.createElement('span', { className: 'task-count-badge' }, String(count));
+                dayElement.appendChild(badge);
+            } else {
+                badge.textContent = String(count);
             }
+
+            // Apply color class based on a simple heuristic: 1 -> low, 2 -> medium, >=3 -> high
+            dayElement.classList.remove('task-low', 'task-medium', 'task-high');
+            if (count >= 3) dayElement.classList.add('task-high');
+            else if (count === 2) dayElement.classList.add('task-medium');
+            else dayElement.classList.add('task-low');
         });
+
+        // Add legend if not present
+        if (!this.calendarContainer.querySelector('.calendar-legend')) {
+            const legend = Helpers.createElement('div', { className: 'calendar-legend' });
+            const low = Helpers.createElement('div', { className: 'legend-item legend-low' }, 'Low');
+            low.prepend(Helpers.createElement('span', { className: 'legend-color' }));
+            const med = Helpers.createElement('div', { className: 'legend-item legend-medium' }, 'Medium');
+            med.prepend(Helpers.createElement('span', { className: 'legend-color' }));
+            const high = Helpers.createElement('div', { className: 'legend-item legend-high' }, 'High');
+            high.prepend(Helpers.createElement('span', { className: 'legend-color' }));
+            legend.appendChild(low);
+            legend.appendChild(med);
+            legend.appendChild(high);
+            this.calendarContainer.appendChild(legend);
+        }
+    },
+
+    // Backwards-compatible alias used by TodoApp
+    updateDayIndicators() {
+        try {
+            const dates = (window.TodoApp && typeof window.TodoApp.getDatesWithTasks === 'function') ? window.TodoApp.getDatesWithTasks() : {};
+            this.updateTaskIndicators(dates);
+        } catch (e) {
+            // ignore
+        }
     },
     
     /**

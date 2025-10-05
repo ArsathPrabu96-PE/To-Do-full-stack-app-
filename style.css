@@ -400,6 +400,42 @@ nav a:hover::after {
     cursor: pointer;
 }
 
+/* Background glow overlay */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background-image: radial-gradient(circle at 10% 20%, rgba(52,152,219,0.12), transparent 15%),
+                      radial-gradient(circle at 80% 80%, rgba(231,76,60,0.09), transparent 18%);
+    mix-blend-mode: screen;
+    opacity: 0.95;
+    animation: glowShift 12s ease-in-out infinite alternate;
+}
+
+@keyframes glowShift {
+    0% { transform: scale(1); filter: blur(0px); }
+    50% { transform: scale(1.02); filter: blur(2px); }
+    100% { transform: scale(1.04); filter: blur(4px); }
+}
+
+/* Calendar day glow/color indicators */
+.calendar-container { position: relative; }
+.calendar-legend { display:flex; gap:12px; align-items:center; margin-top:12px; }
+.calendar-legend .legend-item { display:flex; align-items:center; gap:8px; font-size:0.9rem; color:#333; }
+.legend-color { width:12px; height:12px; border-radius:50%; box-shadow:0 0 8px rgba(0,0,0,0.08); }
+.legend-low .legend-color { background: linear-gradient(45deg, #2ed573, #1dd1a1); box-shadow:0 0 12px rgba(46,213,115,0.25); }
+.legend-medium .legend-color { background: linear-gradient(45deg, #ffa502, #ff9500); box-shadow:0 0 12px rgba(255,165,2,0.25); }
+.legend-high .legend-color { background: linear-gradient(45deg, #ff4757, #ff3742); box-shadow:0 0 14px rgba(255,71,87,0.28); }
+
+.calendar-day { position:relative; transition: all 0.25s ease; border-radius:8px; padding:6px; }
+.calendar-day.task-low { box-shadow: 0 6px 18px rgba(46,213,115,0.12); background: linear-gradient(180deg, rgba(46,213,115,0.06), transparent); }
+.calendar-day.task-medium { box-shadow: 0 6px 18px rgba(255,165,2,0.12); background: linear-gradient(180deg, rgba(255,165,2,0.06), transparent); }
+.calendar-day.task-high { box-shadow: 0 8px 22px rgba(255,71,87,0.14); background: linear-gradient(180deg, rgba(255,71,87,0.06), transparent); }
+
+.calendar-day .task-count-badge { position:absolute; top:4px; right:6px; font-size:0.7rem; padding:2px 6px; border-radius:999px; background:rgba(0,0,0,0.6); color:white; }
+
 /* Polished UI additions for todo list */
 .todo-action-buttons {
     display: flex;

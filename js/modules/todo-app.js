@@ -162,16 +162,21 @@ const TodoApp = {
         })(date);
 
         try {
+            // If browser reports offline, skip network attempts and show demo immediately
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                throw new TypeError('navigator offline');
+            }
+
             const url = `${this.API_URL}?date=${encodeURIComponent(formattedDate)}`;
             console.log('Fetching todos from:', url);
             
             const headers = this._authHeaders();
-            const response = await fetch(url, { headers });
-            console.log('Response status:', response.status);
+            const response = await this.fetchWithTimeout(url, { headers }, 5000);
+            console.log('Response status:', response && response.status);
 
-            if (!response.ok) {
-                const text = await response.text().catch(() => '');
-                throw new Error(`HTTP ${response.status} when fetching todos. ${text}`);
+            if (!response || !response.ok) {
+                const text = response ? await response.text().catch(() => '') : '';
+                throw new Error(`HTTP ${response ? response.status : 'NO_RESPONSE'} when fetching todos. ${text}`);
             }
 
             const payload = await response.json();
@@ -194,37 +199,57 @@ const TodoApp = {
             this.updateTaskDates();
 
         } catch (error) {
-            console.error('Failed to fetch todos:', error);
-            console.error('Error details:', error.message);
-            console.error('Error stack:', error.stack);
+            // For expected network/connectivity errors, avoid printing long stacks
+            const isNetworkError = error instanceof TypeError || /ECONNREFUSED|NO_RESPONSE|navigator offline|Failed to fetch/i.test(error.message || '');
+            if (!isNetworkError) console.error('Failed to fetch todos:', error);
+            else console.warn('Network fetch failed:', error.message || String(error));
 
-            // Detect network-level failure (fetch failed to connect)
-            const isNetworkError = (error instanceof TypeError && /failed to fetch|network/i.test(error.message));
-
-            // Show a clear actionable message in the UI
+            // UI: show a concise message and demo todos when offline, include an inline Retry button
+            this.todoList.innerHTML = '';
             const msg = document.createElement('li');
             msg.className = 'error';
-            if (isNetworkError) {
-                msg.innerHTML = `Could not connect to the backend at <code>${this.API_URL}</code>. Make sure the server is running (see <code>backend/</code>) and that it's listening on port 3000.`;
-            } else {
-                msg.textContent = 'Error: Could not load tasks from the server.';
-            }
-            this.todoList.innerHTML = '';
+            const span = document.createElement('span');
+            span.textContent = `Offline or cannot reach backend (${this.API_URL}). `;
+            const retryBtn = document.createElement('button');
+            retryBtn.className = 'btn-small retry-inline';
+            retryBtn.textContent = 'Retry';
+            retryBtn.setAttribute('aria-label', 'Retry connection');
+            retryBtn.addEventListener('click', async (ev) => {
+                ev.preventDefault();
+                // show checking state and attempt health check + fetch for the same date
+                this.updateConnectionIndicator('checking');
+                await this.healthCheckAndFetch(date);
+            });
+            msg.appendChild(span);
+            msg.appendChild(retryBtn);
             this.todoList.appendChild(msg);
 
             // Populate demo todos so the UI remains usable offline for testing
             const demoTodos = [
                 { id: 'demo-1', text: 'Demo: Welcome — start the backend to use real todos', completed: 0, date: formattedDate, category: 'Demo' },
-                { id: 'demo-2', text: 'Demo: Try adding tasks when backend is up', completed: 0, date: formattedDate, category: 'Demo' }
+                { id: 'demo-2', text: 'Demo: Try adding tasks while offline', completed: 0, date: formattedDate, category: 'Demo' }
             ];
             demoTodos.forEach(todo => {
                 const li = this.createTodoItem(todo);
-                // mark visually as demo
-                li.dataset.id = todo.id;
+                li.dataset.id = todo.id; // ensure demo CSS applies
                 this.todoList.appendChild(li);
             });
             // Update connection indicator to disconnected
             this.updateConnectionIndicator('disconnected');
+        }
+    },
+
+    // Small fetch helper with a timeout
+    async fetchWithTimeout(resource, options = {}, timeout = 5000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        try {
+            const resp = await fetch(resource, Object.assign({}, options, { signal: controller.signal }));
+            clearTimeout(id);
+            return resp;
+        } catch (err) {
+            clearTimeout(id);
+            throw err;
         }
     },
 
@@ -256,6 +281,13 @@ const TodoApp = {
         let attempt = 0;
         let ok = false;
 
+        // If browser reports offline, avoid probing the network repeatedly
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            this.updateConnectionIndicator('disconnected');
+            await this.fetchTodos(date);
+            return;
+        }
+
         while (attempt < maxAttempts && !ok) {
             try {
                 this.updateConnectionIndicator('checking');
@@ -264,7 +296,7 @@ const TodoApp = {
                 const headers = this._authHeaders();
                 let resp;
                 try {
-                    resp = await fetch(healthUrl, { method: 'GET', headers });
+                    resp = await this.fetchWithTimeout(healthUrl, { method: 'GET', headers }, 3000);
                 } catch (e) {
                     resp = null;
                 }
@@ -276,11 +308,8 @@ const TodoApp = {
 
                 // Fallback: attempt a lightweight GET to the todos endpoint (may return CORS if blocked, but server reachable often OK)
                 try {
-                    const r2 = await fetch(this.API_URL + '?_probe=1', { method: 'GET', headers });
-                    if (r2 && r2.ok) {
-                        ok = true;
-                        break;
-                    }
+                    const r2 = await this.fetchWithTimeout(this.API_URL + '?_probe=1', { method: 'GET', headers }, 3000);
+                    if (r2 && r2.ok) { ok = true; break; }
                 } catch (e) {
                     // ignore and retry
                 }
@@ -340,10 +369,13 @@ const TodoApp = {
             for (const t of store) {
                 try {
                     const headers = Object.assign({ 'Content-Type': 'application/json' }, this._authHeaders());
-                    const resp = await fetch(this.API_URL, { method: 'POST', headers, body: JSON.stringify({ text: t.text, date: t.date, priority: t.priority, category: t.category }) });
-                    if (resp.ok) {
-                        synced.push(t.id);
-                    }
+                            try {
+                                const resp = await this.fetchWithTimeout(this.API_URL, { method: 'POST', headers, body: JSON.stringify({ text: t.text, date: t.date, priority: t.priority, category: t.category }) }, 5000);
+                                if (resp && resp.ok) synced.push(t.id);
+                            } catch (e) {
+                                // network error or timeout — keep item for next sync
+                                console.warn('Offline sync POST failed for item', t.id, e.message || e);
+                            }
                 } catch (e) { /* keep it for next sync */ }
             }
 
@@ -369,10 +401,15 @@ const TodoApp = {
      */
     async addTodo(text) {
         if (!text) return;
+        // Ensure we have a usable formattedDate even if CalendarApp fails
+        let formattedDate = (function() {
+            try { return CalendarApp.formatDate(CalendarApp.getSelectedDate()); } catch (e) { return new Date().toISOString().slice(0,10); }
+        })();
         
         try {
             const selectedDate = CalendarApp.getSelectedDate();
-            const formattedDate = CalendarApp.formatDate(selectedDate);
+            // recompute if possible
+            try { formattedDate = CalendarApp.formatDate(selectedDate); } catch (e) { /* keep fallback */ }
             
             // Get form values
             const prioritySelect = document.getElementById('priority-select');
@@ -393,7 +430,7 @@ const TodoApp = {
             }));
             
             const headers = this._authHeaders();
-            const response = await fetch(this.API_URL, {
+            const response = await this.fetchWithTimeout(this.API_URL, {
                 method: 'POST',
                 headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
                 body: JSON.stringify({ 
@@ -403,11 +440,11 @@ const TodoApp = {
                     dueDate: dueDate,
                     category: category
                 })
-            });
-            
-            if (!response.ok) {
-                const text = await response.text().catch(() => '');
-                throw new Error(`HTTP ${response.status} when creating todo. ${text}`);
+            }, 7000);
+
+            if (!response || !response.ok) {
+                const text = response ? await response.text().catch(() => '') : '';
+                throw new Error(`HTTP ${response ? response.status : 'NO_RESPONSE'} when creating todo. ${text}`);
             }
 
             const newTodo = await response.json();
@@ -492,13 +529,9 @@ const TodoApp = {
             }
 
             const headers = this._authHeaders();
-            const response = await fetch(`${this.API_URL}/${id}`, { 
-                method: 'DELETE',
-                headers
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            const response = await this.fetchWithTimeout(`${this.API_URL}/${id}`, { method: 'DELETE', headers }, 5000);
+            if (!response || !response.ok) {
+                throw new Error(`HTTP error! status: ${response ? response.status : 'NO_RESPONSE'}`);
             }
 
             // Remove the todo item from the list visually
@@ -535,15 +568,8 @@ const TodoApp = {
     async toggleComplete(id, completed) {
         try {
             const headers = Object.assign({ 'Content-Type': 'application/json' }, this._authHeaders());
-            const response = await fetch(`${this.API_URL}/${id}`, {
-                method: 'PUT',
-                headers,
-                body: JSON.stringify({ completed })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            const response = await this.fetchWithTimeout(`${this.API_URL}/${id}`, { method: 'PUT', headers, body: JSON.stringify({ completed }) }, 5000);
+            if (!response || !response.ok) throw new Error(`HTTP error! status: ${response ? response.status : 'NO_RESPONSE'}`);
             
             const li = this.todoList.querySelector(`li[data-id='${id}']`);
             if (li) {
@@ -621,15 +647,8 @@ const TodoApp = {
     async updateTodoText(id, text) {
         try {
             const headers = Object.assign({ 'Content-Type': 'application/json' }, this._authHeaders());
-            const response = await fetch(`${this.API_URL}/${id}`, {
-                method: 'PUT',
-                headers,
-                body: JSON.stringify({ text }),
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            const response = await this.fetchWithTimeout(`${this.API_URL}/${id}`, { method: 'PUT', headers, body: JSON.stringify({ text }) }, 5000);
+            if (!response || !response.ok) throw new Error(`HTTP error! status: ${response ? response.status : 'NO_RESPONSE'}`);
             
             // Show success notification
             Helpers.showNotification('Task updated successfully!', 'success');
@@ -759,11 +778,11 @@ const TodoApp = {
         todoItems.forEach(item => {
             const date = item.dataset.date;
             if (date) {
-                datesWithTasks[date] = true;
+                datesWithTasks[date] = (datesWithTasks[date] || 0) + 1;
             }
         });
         
-        this.taskDates = datesWithTasks;
+        this.taskDates = datesWithTasks; // { 'YYYY-MM-DD': count }
         
         // If CalendarApp is available, update its indicators
         if (window.CalendarApp && typeof window.CalendarApp.updateDayIndicators === 'function') {
@@ -999,21 +1018,14 @@ const TodoApp = {
                 const selectedDate = CalendarApp.getSelectedDate();
                 const formattedDate = CalendarApp.formatDate(selectedDate);
                 
-                const response = await fetch(this.API_URL, {
-                    method: 'POST',
-                        headers: Object.assign({ 'Content-Type': 'application/json' }, this._authHeaders()),
-                    body: JSON.stringify({
-                        text: todo.text,
-                        date: formattedDate,
-                        priority: todo.priority,
-                        dueDate: todo.dueDate,
-                        category: todo.category
-                    })
-                });
-                
-                if (response.ok) {
-                    const newTodo = await response.json();
-                    console.log('Added sample todo:', newTodo);
+                try {
+                    const response = await this.fetchWithTimeout(this.API_URL, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, this._authHeaders()), body: JSON.stringify({ text: todo.text, date: formattedDate, priority: todo.priority, dueDate: todo.dueDate, category: todo.category }) }, 5000);
+                    if (response && response.ok) {
+                        const newTodo = await response.json();
+                        console.log('Added sample todo:', newTodo);
+                    }
+                } catch (e) {
+                    console.warn('Failed to add sample todo (network):', e.message || e);
                 }
             } catch (error) {
                 console.error('Error adding sample todo:', error);

@@ -1,5 +1,19 @@
 # To-Do Full Stack App
 
+Version: 1.2.4
+
+A responsive full-stack To-Do application with offline-first features, a calendar view with colored indicators, and a subtle animated background glow for a modern UX.
+
+This repository contains a lightweight Express backend (SQLite) and a vanilla JavaScript frontend. Key features include:
+
+- Offline persistence: add tasks while offline; tasks are stored in localStorage under `offline_todos` and synced when the backend is available.
+- Robust offline sync: health checks with backoff, inline Retry UI, and per-session sync of offline items.
+- Calendar indicators: the Calendar shows per-day task counts and uses soft colored glows to indicate low/medium/high task density.
+- Background glow: subtle animated radial glow overlay for improved visual polish.
+- AI chatbot proxy (optional): server-side proxy to OpenAI (disabled unless `OPENAI_API_KEY` is set).
+
+See `USER_MANUAL.md` for detailed instructions on running the app, offline behavior, and the calendar UI.
+
 Version: 1.2.3
 
 Overview
@@ -34,6 +48,33 @@ Files of interest
 - `backend/todos.db` – SQLite database file
 - `USER_MANUAL.md` – full usage guide and troubleshooting (see below)
 - `VERSION` – project version
+
+E2E / Offline sync (how to run)
+-------------------------------
+A short workflow to reproduce the offline->sync flow locally using the included scripts:
+
+1. From the repository root start the static server (serves the built front-end):
+
+```powershell
+node scripts\start-static-server.js 8082
+# then open http://127.0.0.1:8082
+```
+
+2. In a separate terminal you can optionally start the real backend (or skip and let the E2E test start the mock backend):
+
+```powershell
+cd backend
+npm install
+npm run start
+```
+
+3. Run the Puppeteer E2E test which simulates going offline, adding a todo, starting the mock backend, clicking Retry, and asserting the offline todo was synced:
+
+```powershell
+node scripts\e2e-offline-sync.test.js
+```
+
+The E2E script will print test progress to the console. If you prefer to step through the flow manually, open the static server URL, toggle your network (or stop the backend), create a todo while disconnected, then bring the backend back and click Retry in the header.
 
 Authentication (short)
 ----------------------

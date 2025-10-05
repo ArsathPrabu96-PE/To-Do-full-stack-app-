@@ -1,22 +1,33 @@
 Release notes
 ---------------------
 
-- 1.2.3 — UI polish, chatbot LLM proxy, rate limiting, and tests (2025-10-05)
+- 1.2.4 — Offline resilience, calendar indicators, visual polish, and docs (2025-10-06)
 
-What's new in 1.2.3
+What's new in 1.2.4
 -------------------
-- Chatbot LLM proxy: The Contact section includes a chatbot widget that POSTs to `/api/chat`. When the backend environment variable `OPENAI_API_KEY` is set the server forwards the request to OpenAI's Chat Completions API and returns the assistant reply. Without a key the server returns safe demo responses.
-- Rate limiting: To limit accidental or abusive traffic, the `/api/chat` route is rate-limited (default 30 requests/minute). You can adjust this with the `CHAT_RATE_LIMIT` environment variable.
-- Test coverage: Added `backend/tests/chat-openai.test.js` which uses `nock` to mock OpenAI and `supertest` to validate the route behavior. This allows CI to verify chat proxy behavior without requiring secrets.
-- UI/UX improvements: A Floating Add Button (FAB) was added to the To-Do section to quickly focus the task input. New slide-in/out animations make adding/removing tasks feel smoother. Buttons and task states (completed) received visual polish.
-- Offline demo mode: If the frontend cannot reach the backend, it now shows an actionable message and populates demo todos so the interface remains interactive for demos and testing.
+- Offline resilience and sync improvements:
+  - The frontend now detects offline/online state and shows a Connection indicator in the header. When the app cannot reach the backend it displays an actionable message with a Retry button and populates demo todos so the UI remains interactive.
+  - Requests to the backend use a short timeout to avoid long hanging requests when offline. Offline-created todos are saved in localStorage under the key `offline_todos` and are synced automatically when connectivity is restored or when the user clicks Retry.
+  - The sync logic is robust: only items that successfully POST to the server are removed from the local offline queue. Partial failures are preserved for later retry.
 
+- Calendar visual indicators and background glow:
+  - The calendar now marks dates that have tasks using color-coded badges. Badges reflect task counts (low/medium/high density) and are visible in the calendar view and legend.
+  - A subtle animated background glow was added to improve contrast and modernize the visual feel. This is purely cosmetic and can be disabled by overriding the `.app-glow` / `body::before` styles in `style.css`.
+
+- UI polish and accessibility fixes:
+  - Buttons received animated ripple and hover states; the Retry button is keyboard-focusable and includes ARIA labels for screen readers.
+  - Fixed a frontend ReferenceError around `formattedDate` when saving offline tasks so offline flows no longer throw exceptions.
+
+- Testing & developer tools:
+  - Added an end-to-end offline->sync Puppeteer script (`scripts/e2e-offline-sync.test.js`) and a simple static server (`scripts/start-static-server.js`) to reproduce the offline flow locally.
+  - A mock backend script (`scripts/mock-backend.js`) can be used by the E2E test to simulate coming back online.
+
+- 1.2.3 — UI polish, chatbot LLM proxy, rate limiting, and tests (2025-10-05)
 - 1.2.2 — Docs reorganized and version sync (2025-10-05)
-- 1.2.1 — Docs reorganized and version sync (2025-10-05)
 
 giTo-Do Full Stack App - User Manual
 
-Version: 1.2.3
+Version: 1.2.4
 
 Quick start (development)
 -------------------------
@@ -39,9 +50,10 @@ The server listens on port 3000 by default. If the app cannot reach the backend,
 http://127.0.0.1:3000/health
 
 Running the front-end
-- Open `index.html` in your browser (served using Live Server on port 5501 or file://). For best results use a static file server:
-  python -m http.server 5501
-  then open http://127.0.0.1:5501
+- For development use the included static server helper and the E2E script, or serve `index.html` with any static server.
+- Quick: from project root run the Node static server (requires Node installed):
+  node scripts\start-static-server.js 8082
+  then open http://127.0.0.1:8082
 
 Overview
 --------
@@ -54,6 +66,7 @@ Contents
 3. Backend API (endpoints and payloads)
 4. Troubleshooting
 5. Maintenance & data
+6. E2E & developer tools
 
 2) Front-end usage
 ------------------
@@ -61,7 +74,11 @@ Add a task
 - Open the To-Do section in the page.
 - Enter the task text in the "New task..." input.
 - Optionally choose a priority, a due date, and type a category.
-- Click Add Task. The task will be sent to the backend and appear in the list.
+- Click Add Task. If you're online the task will be sent to the backend and appear in the list. If you're offline it will be saved locally and synced when connectivity is restored.
+
+Offline tips
+- When offline the header will show "Disconnected". The app populates demo todos to keep the UI usable.
+- Create tasks while offline — they will be saved to localStorage under `offline_todos` with the payload shape matching the server POST. Click Retry when connectivity is restored to attempt sync.
 
 Custom categories
 - Type a custom category in the category input when creating a task. The app saves it and the category filter will be updated automatically.
@@ -105,11 +122,22 @@ Problem: Category not updating / only "Personal" appears
 - Database: `backend/todos.db` (SQLite). You can inspect it with a SQLite viewer.
 - To reset data: stop the backend, delete `backend/todos.db`, then restart the server to re-create the table.
 
+6) E2E & developer tools
+------------------------
+- Reproduce offline->sync flow locally:
+  1. From the repository root start the static server (port 8082):
+     node scripts\start-static-server.js 8082
+  2. Open a separate terminal and (optionally) start the real backend: `cd backend && npm install && npm run start`.
+     If you'd rather use the mock backend that the E2E script uses, skip starting the real backend.
+  3. Run the Puppeteer test to simulate adding an offline todo and coming back online:
+     node scripts\e2e-offline-sync.test.js
+  4. The test will start a browser, simulate offline/online behavior, add a todo while offline, start the mock backend, click Retry and assert the offline todo was synced.
+
 Contact & Support
 -----------------
 If you provide the exact console/network error, I can help debug further.
 
-6) Authentication (signup / login / logout)
+7) Authentication (signup / login / logout)
 -----------------------------------------
 - Signup: Open `signup.html` and fill in email and password. The page performs a client-side password strength check and shows a 3D spinner while the request is processed. On success the page redirects to `login.html`.
 - Login: Open `login.html`, enter your credentials and log in. On successful login a JWT token is saved to `localStorage` and you'll be redirected to the main page. The header shows your email and a Logout button when logged in.
