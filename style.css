@@ -940,6 +940,15 @@ form a { margin-left:8px; font-size:0.9rem; color:var(--primary-color); }
     box-shadow: 0 6px 10px rgba(11,22,39,0.06) inset;
 }
 
+/* inline important note highlight */
+.important-note {
+    font-weight: 700;
+    color: var(--accent-color);
+    background: rgba(231,76,60,0.06);
+    padding: 0.08rem 0.28rem;
+    border-radius: 4px;
+}
+
 /* 9. Contact Form */
 #contact-form {
     display: flex;
