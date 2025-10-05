@@ -1,0 +1,15 @@
+{
+  "name": "todo-backend",
+  "version": "1.2.3",
+  "description": "Backend for To-Do Full Stack App",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "mocha tests --exit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "mocha": "^10.0.0"
+  }
+}
