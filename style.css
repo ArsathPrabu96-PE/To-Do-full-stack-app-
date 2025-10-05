@@ -1399,6 +1399,96 @@ button:active .fas, .project a:active .fas {
     margin-top: 5px;
 }
 
+/* ---------------------------- */
+/* Typography & Button Overrides */
+/* Placed at EOF so they override previous definitions without touching many sections */
+/* ---------------------------- */
+
+/* Stronger headings for emphasis */
+h1, h2, h3 {
+    font-weight: 700 !important;
+}
+
+/* Slightly bolder body text for readability */
+body, p, li, label, input, select, textarea {
+    font-weight: 500 !important;
+}
+
+h1 { font-size: 2.6rem; letter-spacing: -0.02em; }
+h2 { font-size: 1.8rem; }
+
+/* Make primary CTA buttons more prominent and tactile */
+button, .btn-secondary, .project a {
+    font-weight: 700 !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
+}
+
+button:hover, .btn-secondary:hover, .project a:hover {
+    transform: translateY(-3px) scale(1.01) !important;
+    box-shadow: 0 10px 30px rgba(43, 134, 217, 0.18) !important;
+}
+
+button:active, .btn-secondary:active, .project a:active {
+    transform: translateY(-1px) scale(0.995) !important;
+    filter: brightness(0.98) !important;
+}
+
+button:focus, .btn-secondary:focus, .project a:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.12) !important;
+}
+
+/* Small button ripple-like effect using pseudo element */
+.btn-small { position: relative; overflow: hidden; }
+.btn-small::after {
+    content: '';
+    position: absolute; left: 50%; top: 50%; width: 0; height: 0; background: rgba(0,0,0,0.06);
+    transform: translate(-50%, -50%);
+    border-radius: 50%; transition: width 0.35s ease, height 0.35s ease, opacity 0.35s ease;
+    opacity: 0; pointer-events: none;
+}
+.btn-small:active::after { width: 220%; height: 220%; opacity: 1; transition: width 0.2s ease, height 0.2s ease, opacity 0.45s ease; }
+
+/* Floating Add Button (FAB) subtle attention pulse */
+.fab-add { animation: fabPulse 6s infinite ease-in-out 1s; }
+@keyframes fabPulse { 0% { box-shadow: 0 10px 25px rgba(43,134,217,0.28); } 50% { box-shadow: 0 18px 34px rgba(43,134,217,0.18); } 100% { box-shadow: 0 10px 25px rgba(43,134,217,0.28); } }
+
+/* Minor accessibility: increase focus ring contrast when keyboard-focused */
+button:focus-visible, .btn-secondary:focus-visible, .project a:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(66,133,244,0.14);
+}
+
+/* End of overrides */
+
+/* Ripple effect base styles */
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.9;
+    background: rgba(255,255,255,0.18);
+    transition: transform 420ms cubic-bezier(.2,.8,.2,1), opacity 420ms ease;
+    will-change: transform, opacity;
+    mix-blend-mode: screen;
+}
+
+/* Dark ripple variant for light buttons */
+.ripple.dark { background: rgba(0,0,0,0.08); mix-blend-mode: normal; }
+
+/* Faster hover transitions for a snappier feel */
+button, .btn-secondary, .project a {
+    transition-duration: 160ms !important;
+}
+
+/* Stronger typographic weight where desired */
+h1, .profile-pic + p, header h1 { font-weight: 800 !important; }
+
+/* Slightly faster FAB hover to match new timing */
+.fab-add { transition-duration: 160ms !important; }
+
+
 /* Drag and drop styles */
 #todo-list li.dragging {
     opacity: 0.5;
