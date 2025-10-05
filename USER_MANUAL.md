@@ -1,6 +1,6 @@
 Release notes
 ---------------------
-- 1.2.3 — UI polish, chatbot LLM proxy, rate limiting, and tests (2025-10-05)
+
 - 1.2.3 — UI polish, chatbot LLM proxy, rate limiting, and tests (2025-10-05)
 
 What's new in 1.2.3
