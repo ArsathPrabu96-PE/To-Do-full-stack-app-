@@ -52,14 +52,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Toggle auth banner in todo section
+    function updateAuthBanner(){
+        const banner = document.getElementById('auth-banner');
+        const token = localStorage.getItem('token');
+        if(!banner) return;
+        if(token) banner.classList.add('hidden');
+        else banner.classList.remove('hidden');
+    }
+
     if(logoutBtn){
         logoutBtn.addEventListener('click', ()=>{
             localStorage.removeItem('token');
             updateAuthUI();
+            updateAuthBanner();
             // Redirect to login page if it exists
             try{ location.href = 'login.html'; }catch(e){ location.reload(); }
         });
     }
 
     updateAuthUI();
+    updateAuthBanner();
 });

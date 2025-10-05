@@ -100,6 +100,10 @@ header p {
 .header-right #user-email { font-weight:600; color:var(--light-color); margin-right:8px; }
 .header-right #logout-btn { padding:6px 10px; border-radius:8px; border:none; background:#e74c3c; color:white; cursor:pointer; }
 
+.auth-banner { background: #fff4e5; border-left: 4px solid #ffb84d; padding:10px 12px; margin-bottom:12px; border-radius:6px; color:#333; }
+.auth-banner a { color: #2c3e50; font-weight:600; text-decoration:underline; }
+.auth-banner.hidden { display:none; }
+
 nav {
     background: rgba(44, 62, 80, 0.9);
     backdrop-filter: blur(10px);

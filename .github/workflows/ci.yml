@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Install root deps
+      run: |
+        npm ci
+
+    - name: Install backend deps
+      run: |
+        cd backend
+        npm ci
+
+    - name: Start backend
+      run: |
+        cd backend
+        npm run dev &
+        # wait for server to start
+        for i in {1..15}; do
+          if nc -z 127.0.0.1 3000; then break; fi
+          sleep 1
+        done
+
+    - name: Run tests
+      run: |
+        cd backend
+        npx mocha tests --exit

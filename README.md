@@ -1,6 +1,6 @@
 # To-Do Full Stack App
 
-Version: 1.2.1
+Version: 1.2.2
 
 Overview
 --------
@@ -42,8 +42,8 @@ Authentication (short)
 
 Release notes (brief)
 ---------------------
-- 1.2.1 — Documentation rearranged and version bump.
-- 1.2.0 — Added authentication (signup/login), logout UI, and improved error handling.
+- 1.2.0 — Documentation rearranged and version bump.
+- 1.2.1 — Added authentication (signup/login), logout UI, and improved error handling.
 
 Full manual
 -----------

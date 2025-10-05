@@ -45,6 +45,15 @@ const TodoApp = {
         
         console.log('TodoApp initialization complete');
     },
+
+    // Return Authorization headers if a token exists
+    _authHeaders() {
+        try {
+            const token = localStorage.getItem('token');
+            if (token) return { 'Authorization': `Bearer ${token}` };
+        } catch (e) { /* ignore */ }
+        return {};
+    },
     
     setupEventListeners() {
         // Add task form submission
@@ -129,7 +138,8 @@ const TodoApp = {
             const url = `${this.API_URL}?date=${formattedDate}`;
             console.log('Fetching todos from:', url);
             
-            const response = await fetch(url);
+            const headers = this._authHeaders();
+            const response = await fetch(url, { headers });
             console.log('Response status:', response.status);
 
             if (!response.ok) {
@@ -137,7 +147,9 @@ const TodoApp = {
                 throw new Error(`HTTP ${response.status} when fetching todos. ${text}`);
             }
 
-            const todos = await response.json();
+            const payload = await response.json();
+            // server returns { meta, todos }
+            const todos = Array.isArray(payload) ? payload : (payload.todos || []);
             console.log('Received todos:', todos);
             
             this.todoList.innerHTML = '';
@@ -191,9 +203,10 @@ const TodoApp = {
                 category: category
             }));
             
+            const headers = this._authHeaders();
             const response = await fetch(this.API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
                 body: JSON.stringify({ 
                     text: text, 
                     date: formattedDate,
@@ -256,8 +269,10 @@ const TodoApp = {
      */
     async deleteTodo(id) {
         try {
+            const headers = this._authHeaders();
             const response = await fetch(`${this.API_URL}/${id}`, { 
-                method: 'DELETE' 
+                method: 'DELETE',
+                headers
             });
             
             if (!response.ok) {
@@ -293,9 +308,10 @@ const TodoApp = {
      */
     async toggleComplete(id, completed) {
         try {
+            const headers = Object.assign({ 'Content-Type': 'application/json' }, this._authHeaders());
             const response = await fetch(`${this.API_URL}/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ completed })
             });
             
@@ -378,11 +394,10 @@ const TodoApp = {
      */
     async updateTodoText(id, text) {
         try {
+            const headers = Object.assign({ 'Content-Type': 'application/json' }, this._authHeaders());
             const response = await fetch(`${this.API_URL}/${id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers,
                 body: JSON.stringify({ text }),
             });
             
@@ -760,7 +775,7 @@ const TodoApp = {
                 
                 const response = await fetch(this.API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                        headers: Object.assign({ 'Content-Type': 'application/json' }, this._authHeaders()),
                     body: JSON.stringify({
                         text: todo.text,
                         date: formattedDate,

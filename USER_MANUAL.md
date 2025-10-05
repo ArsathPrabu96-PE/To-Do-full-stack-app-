@@ -1,6 +1,11 @@
-To-Do Full Stack App - User Manual
+Release notes
+---------------------
+- 1.2.2 — Docs reorganized and version sync (2025-10-05)
+- 1.2.1 — Docs reorganized and version sync (2025-10-05)
 
-Version: 1.2.1
+giTo-Do Full Stack App - User Manual
+
+Version: 1.2.2
 
 Quick start (development)
 -------------------------
