@@ -869,10 +869,75 @@ form a { margin-left:8px; font-size:0.9rem; color:var(--primary-color); }
     margin-bottom: 20px;
 }
 
+/* Highlighted/important project variant */
+.project.important {
+    border-left-color: var(--accent-color);
+    background: linear-gradient(90deg, rgba(231,76,60,0.06), rgba(255,255,255,0.02));
+    padding: 18px;
+    border-radius: 10px;
+}
+
+.project .important-line {
+    display: block;
+    font-weight: 700;
+    color: var(--accent-color);
+    margin-bottom: 8px;
+}
+
+.project p { margin: 8px 0; }
+
+/* Project action alignment */
+.project .project-actions { display:flex; justify-content:flex-end; margin-top:8px; }
+.project .project-actions a { display:inline-flex; align-items:center; gap:8px; }
+
 .project a {
     color: var(--secondary-color);
     text-decoration: none;
     font-weight: 600;
+}
+
+/* 3D depth and hover lift for project cards */
+.project {
+    transform-origin: center;
+    transition: transform 220ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms ease;
+    will-change: transform;
+}
+.project:hover,
+.project:focus-within {
+    transform: translateY(-8px) rotateX(1.2deg) scale(1.01);
+    box-shadow: 0 18px 40px rgba(11,22,39,0.18), 0 6px 14px rgba(11,22,39,0.08);
+}
+
+/* Layered pseudo-3D accent using ::before for subtle depth */
+.project::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    pointer-events: none;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    transform: translateZ(-1px) scale(0.998);
+    transition: opacity 220ms ease, transform 220ms ease;
+    opacity: 0.85;
+}
+.project.important::before { opacity: 1; }
+
+/* 3D press/raised effect for action links */
+.project .project-actions a {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 6px 12px rgba(11,22,39,0.08), inset 0 -2px 0 rgba(255,255,255,0.02);
+    transform: translateZ(0);
+    transition: transform 160ms cubic-bezier(.2,.9,.2,1), box-shadow 160ms ease;
+}
+.project .project-actions a:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px rgba(11,22,39,0.12), inset 0 -2px 0 rgba(255,255,255,0.03);
+}
+.project .project-actions a:active {
+    transform: translateY(0) scale(0.997);
+    box-shadow: 0 6px 10px rgba(11,22,39,0.06) inset;
 }
 
 /* 9. Contact Form */
