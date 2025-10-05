@@ -259,16 +259,33 @@ const TodoApp = {
         while (attempt < maxAttempts && !ok) {
             try {
                 this.updateConnectionIndicator('checking');
-                // ping a lightweight endpoint. If /health exists server should respond; otherwise try GET /todos without date
+                // Try /health first
                 const healthUrl = this.API_URL.replace(/\/todos\/?$/, '/health');
                 const headers = this._authHeaders();
-                const resp = await fetch(healthUrl, { method: 'GET', headers });
-                if (resp.ok) {
+                let resp;
+                try {
+                    resp = await fetch(healthUrl, { method: 'GET', headers });
+                } catch (e) {
+                    resp = null;
+                }
+
+                if (resp && resp.ok) {
                     ok = true;
                     break;
                 }
+
+                // Fallback: attempt a lightweight GET to the todos endpoint (may return CORS if blocked, but server reachable often OK)
+                try {
+                    const r2 = await fetch(this.API_URL + '?_probe=1', { method: 'GET', headers });
+                    if (r2 && r2.ok) {
+                        ok = true;
+                        break;
+                    }
+                } catch (e) {
+                    // ignore and retry
+                }
             } catch (e) {
-                // ignore and retry
+                // ignore outer errors and retry
             }
 
             // exponential backoff
@@ -279,6 +296,8 @@ const TodoApp = {
 
         if (ok) {
             this.updateConnectionIndicator('connected');
+            // attempt to sync offline todos now that we're connected
+            await this.syncOfflineTodos();
             await this.fetchTodos(date);
         } else {
             this.updateConnectionIndicator('disconnected');
@@ -317,18 +336,30 @@ const TodoApp = {
             const key = 'offline_todos';
             const store = JSON.parse(localStorage.getItem(key) || '[]');
             if (!store.length) return;
+            const synced = [];
             for (const t of store) {
                 try {
                     const headers = Object.assign({ 'Content-Type': 'application/json' }, this._authHeaders());
                     const resp = await fetch(this.API_URL, { method: 'POST', headers, body: JSON.stringify({ text: t.text, date: t.date, priority: t.priority, category: t.category }) });
                     if (resp.ok) {
-                        // remove from store
-                        // (we'll collect remaining later)
+                        synced.push(t.id);
                     }
                 } catch (e) { /* keep it for next sync */ }
             }
-            // Clear offline store after attempted sync (simple approach); a more robust approach would remove only successfully synced items
-            localStorage.removeItem(key);
+
+            // Remove only synced items from store
+            const remaining = store.filter(item => !synced.includes(item.id));
+            if (remaining.length) {
+                localStorage.setItem(key, JSON.stringify(remaining));
+            } else {
+                localStorage.removeItem(key);
+            }
+
+            // Notify user about result
+            const syncedCount = synced.length;
+            if (syncedCount > 0) {
+                Helpers.showNotification(`Synced ${syncedCount} offline ${syncedCount === 1 ? 'task' : 'tasks'}.`, 'success');
+            }
         } catch (e) { /* noop */ }
     },
     

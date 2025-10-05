@@ -1502,6 +1502,12 @@ li[data-id^="demo-"] .task-text::after { content: ' (demo)'; font-size:0.85rem; 
 /* Offline-persisted todo look */
 .offline-persisted { box-shadow: inset 0 0 0 2px rgba(255,193,7,0.08); }
 
+/* Focus ring for keyboard users on retry button */
+#retry-connection:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(52,152,219,0.18);
+}
+
 
 /* Drag and drop styles */
 #todo-list li.dragging {
