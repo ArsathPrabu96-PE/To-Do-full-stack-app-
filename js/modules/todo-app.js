@@ -126,6 +126,17 @@ const TodoApp = {
                 this.sortTodos('category');
             });
         }
+
+        // FAB (floating add button) focuses the todo input
+        const fab = document.getElementById('fab-add');
+        if (fab && this.todoInput) {
+            fab.addEventListener('click', () => {
+                this.todoInput.focus();
+                // small visual feedback
+                fab.classList.add('fab-active');
+                setTimeout(() => fab.classList.remove('fab-active'), 250);
+            });
+        }
     },
     
     /**
@@ -170,7 +181,30 @@ const TodoApp = {
             console.error('Failed to fetch todos:', error);
             console.error('Error details:', error.message);
             console.error('Error stack:', error.stack);
-            this.todoList.innerHTML = '<li class="error">Error: Could not load tasks from the server.</li>';
+
+            // Detect network-level failure (fetch failed to connect)
+            const isNetworkError = (error instanceof TypeError && /failed to fetch|network/i.test(error.message));
+
+            // Show a clear actionable message in the UI
+            const msg = document.createElement('li');
+            msg.className = 'error';
+            if (isNetworkError) {
+                msg.innerHTML = `Could not connect to the backend at <code>${this.API_URL}</code>. Make sure the server is running (see <code>backend/</code>) and that it's listening on port 3000.`;
+            } else {
+                msg.textContent = 'Error: Could not load tasks from the server.';
+            }
+            this.todoList.innerHTML = '';
+            this.todoList.appendChild(msg);
+
+            // Populate demo todos so the UI remains usable offline for testing
+            const demoTodos = [
+                { id: 'demo-1', text: 'Demo: Welcome — start the backend to use real todos', completed: 0, date: formattedDate, category: 'Demo' },
+                { id: 'demo-2', text: 'Demo: Try adding tasks when backend is up', completed: 0, date: formattedDate, category: 'Demo' }
+            ];
+            demoTodos.forEach(todo => {
+                const li = this.createTodoItem(todo);
+                this.todoList.appendChild(li);
+            });
         }
     },
     
@@ -232,6 +266,9 @@ const TodoApp = {
             
             const li = this.createTodoItem(newTodo);
             this.todoList.appendChild(li);
+            // animate entry
+            requestAnimationFrame(() => li.classList.add('slide-in'));
+            li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
             // Clear form and reset to defaults
             this.todoInput.value = '';
@@ -269,20 +306,38 @@ const TodoApp = {
      */
     async deleteTodo(id) {
         try {
+            // If this is a demo-local item, just remove it client-side
+            if (String(id).startsWith('demo-')) {
+                const itemToRemove = this.todoList.querySelector(`li[data-id='${id}']`);
+                if (itemToRemove) {
+                    itemToRemove.classList.add('slide-out');
+                    itemToRemove.addEventListener('animationend', () => {
+                        if (itemToRemove && itemToRemove.parentElement) itemToRemove.parentElement.removeChild(itemToRemove);
+                    }, { once: true });
+                }
+                this.updateTaskDates();
+                Helpers.showNotification('Demo task removed locally.', 'success');
+                return;
+            }
+
             const headers = this._authHeaders();
             const response = await fetch(`${this.API_URL}/${id}`, { 
                 method: 'DELETE',
                 headers
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             // Remove the todo item from the list visually
             const itemToRemove = this.todoList.querySelector(`li[data-id='${id}']`);
             if (itemToRemove) {
-                itemToRemove.remove();
+                // animate out then remove
+                itemToRemove.classList.add('slide-out');
+                itemToRemove.addEventListener('animationend', () => {
+                    if (itemToRemove && itemToRemove.parentElement) itemToRemove.parentElement.removeChild(itemToRemove);
+                }, { once: true });
             }
             
             // If no more todos, show "no tasks" message
@@ -488,26 +543,26 @@ const TodoApp = {
         taskContent.appendChild(taskText);
         taskContent.appendChild(taskMeta);
 
-        // Buttons wrapper
-        const buttonWrapper = document.createElement('div');
-        buttonWrapper.className = 'button-wrapper';
+    // Buttons wrapper
+    const buttonWrapper = document.createElement('div');
+    buttonWrapper.className = 'todo-action-buttons button-wrapper';
 
-        // Complete button
-        const completeBtn = document.createElement('button');
-        completeBtn.className = 'complete-btn';
+    // Complete button
+    const completeBtn = document.createElement('button');
+    completeBtn.className = 'complete-btn btn-small';
         completeBtn.innerHTML = todo.completed ? '<i class="fas fa-undo"></i> Undo' : '<i class="fas fa-check"></i> Complete';
         completeBtn.setAttribute('aria-label', todo.completed ? 'Mark as incomplete' : 'Mark as complete');
 
         // Edit button
-        const editBtn = document.createElement('button');
-        editBtn.className = 'edit-btn';
-        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-btn btn-small';
+    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
         editBtn.setAttribute('aria-label', 'Edit task');
 
         // Delete button
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-btn btn-small';
+    deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
         deleteBtn.setAttribute('aria-label', 'Delete task');
 
         buttonWrapper.appendChild(completeBtn);

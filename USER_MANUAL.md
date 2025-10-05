@@ -1,11 +1,22 @@
 Release notes
 ---------------------
+- 1.2.3 — UI polish, chatbot LLM proxy, rate limiting, and tests (2025-10-05)
+- 1.2.3 — UI polish, chatbot LLM proxy, rate limiting, and tests (2025-10-05)
+
+What's new in 1.2.3
+-------------------
+- Chatbot LLM proxy: The Contact section includes a chatbot widget that POSTs to `/api/chat`. When the backend environment variable `OPENAI_API_KEY` is set the server forwards the request to OpenAI's Chat Completions API and returns the assistant reply. Without a key the server returns safe demo responses.
+- Rate limiting: To limit accidental or abusive traffic, the `/api/chat` route is rate-limited (default 30 requests/minute). You can adjust this with the `CHAT_RATE_LIMIT` environment variable.
+- Test coverage: Added `backend/tests/chat-openai.test.js` which uses `nock` to mock OpenAI and `supertest` to validate the route behavior. This allows CI to verify chat proxy behavior without requiring secrets.
+- UI/UX improvements: A Floating Add Button (FAB) was added to the To-Do section to quickly focus the task input. New slide-in/out animations make adding/removing tasks feel smoother. Buttons and task states (completed) received visual polish.
+- Offline demo mode: If the frontend cannot reach the backend, it now shows an actionable message and populates demo todos so the interface remains interactive for demos and testing.
+
 - 1.2.2 — Docs reorganized and version sync (2025-10-05)
 - 1.2.1 — Docs reorganized and version sync (2025-10-05)
 
 giTo-Do Full Stack App - User Manual
 
-Version: 1.2.2
+Version: 1.2.3
 
 Quick start (development)
 -------------------------

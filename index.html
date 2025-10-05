@@ -141,13 +141,29 @@
             <h2><i class="fas fa-envelope"></i> Contact Me</h2>
             <p>Have a question or want to work together? Send me a message!</p>
             <form id="contact-form">
-                <div class="form-row">
-                    <input type="text" id="name" name="name" placeholder="Your Name" required autocomplete="name" aria-label="Your Name">
-                    <input type="email" id="email" name="email" placeholder="Your Email" required autocomplete="email" aria-label="Your Email">
-                </div>
-                <textarea id="message" name="message" rows="5" placeholder="Your Message" required autocomplete="message" aria-label="Your Message"></textarea>
-                <button type="submit"><i class="fas fa-paper-plane"></i> Send Message</button>
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required>
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+                <label for="message">Message</label>
+                <textarea id="message" name="message" rows="5" required></textarea>
+                <button type="submit">Send</button>
             </form>
+
+            <!-- AI Chatbot widget -->
+            <div id="chatbot" class="chatbot-closed">
+                <div class="chatbot-header">
+                    <span>Chat with me</span>
+                    <button id="chatbot-toggle" aria-label="Open chat">💬</button>
+                </div>
+                <div id="chatbot-body" class="chatbot-body" aria-live="polite">
+                    <div id="chat-messages" class="chat-messages"></div>
+                    <div class="chat-input-row">
+                        <input id="chat-input" placeholder="Ask a question..." aria-label="Chat input">
+                        <button id="chat-send">Send</button>
+                    </div>
+                </div>
+            </div>
         </section>
 
     </main>
@@ -156,12 +172,16 @@
         <p>&copy; 2024 Arsath Prabu. All rights reserved.</p>
     </footer>
 
+    <!-- Floating Add button (FAB) -->
+    <button class="fab-add" id="fab-add" title="Add task"><i class="fas fa-plus"></i></button>
+
     <!-- Modular JS files -->
     <script src="js/modules/helpers.js"></script>
     <script src="js/modules/ui-effects.js"></script>
     <script src="js/modules/form-validator.js"></script>
     <script src="js/modules/calendar-app.js"></script>
     <script src="js/modules/todo-app.js"></script>
+    <script src="js/modules/chatbot.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

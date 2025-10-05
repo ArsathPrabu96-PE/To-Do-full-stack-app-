@@ -1,6 +1,6 @@
 # To-Do Full Stack App
 
-Version: 1.2.2
+Version: 1.2.3
 
 Overview
 --------
@@ -40,8 +40,18 @@ Authentication (short)
 - Signup: `signup.html` performs a password strength check and redirects to `login.html` on success.
 - Login: `login.html` stores a JWT token in `localStorage` on successful login. The main page header shows the logged-in email and a Logout button.
 
-Release notes (brief)
----------------------
+- Release notes (brief)
+- ---------------------
+- 1.2.3 — UI polish, chatbot LLM proxy, rate limiting, and tests (2025-10-05)
+
+What's new in 1.2.3
+-------------------
+- Chatbot LLM proxy: The in-page chatbot now proxies messages to a server-side `/api/chat` endpoint. When `OPENAI_API_KEY` is set on the backend the server forwards messages to OpenAI and returns model replies. If no key is present the widget falls back to a local demo responder.
+- Rate limiting: The `/api/chat` endpoint is protected by express-rate-limit to prevent abuse (configurable via `CHAT_RATE_LIMIT`).
+- Tests: Added a unit/integration test that mocks the OpenAI API (using `nock`) so CI can run without secrets.
+- UI polish: Improved todo-list visuals, added a Floating Add Button (FAB) to quickly focus the input, and slide-in/out animations for adding/removing tasks.
+- Offline friendly: Frontend now shows demo todos and a clear actionable message when the backend is unreachable, so the UI remains usable for demos.
+
 - 1.2.0 — Documentation rearranged and version bump.
 - 1.2.1 — Added authentication (signup/login), logout UI, and improved error handling.
 
