@@ -23,8 +23,8 @@ const server = http.createServer((req, res) => {
   res.end('Not found');
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Backend server listening on http://127.0.0.1:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Backend server listening on http://0.0.0.0:${PORT}`);
 });
 
 process.on('SIGINT', () => { server.close(() => process.exit(0)); });
